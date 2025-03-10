@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect } from "react";
 import BacktestForm from "@/components/BacktestForm";
 import BacktestResults from "@/components/BacktestResults";
 import BacktestChart from "@/components/BacktestChart";
 import { BacktestParams, BacktestResult, runBacktest } from "@/utils/backtestUtils";
-import { fetchHistoricalPrices, fetchCurrentPrice, saveApiKey } from "@/services/priceService";
+import { fetchHistoricalPrices } from "@/services/priceService";
 import { Bitcoin } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const { toast } = useToast();
   
+  // State management
   const [params, setParams] = useState<BacktestParams>({
     initialCapital: 10000,
     bitcoinRatio: 50,
@@ -25,126 +25,56 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [earliestDate, setEarliestDate] = useState<string>("");
   const [latestDate, setLatestDate] = useState<string>("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
-  const [apiKey, setApiKey] = useState("");
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
-  const [isRealtime, setIsRealtime] = useState<boolean>(false);
-  const timerRef = useRef<number | null>(null);
 
+  // Fetch historical price data on mount
   useEffect(() => {
-    if (isRealtime) {
-      fetchRealtimePrice();
-      
-      timerRef.current = window.setInterval(fetchRealtimePrice, 10000);
-    } else {
-      if (timerRef.current !== null) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
-    }
-    
-    return () => {
-      if (timerRef.current !== null) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [isRealtime]);
-
-  const fetchRealtimePrice = async () => {
-    try {
-      const price = await fetchCurrentPrice();
-      setCurrentPrice(price);
-      
-      if (result && priceData.length > 0) {
-        const today = new Date().toISOString().split("T")[0];
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchHistoricalPrices();
         
-        const updatedPriceData = [...priceData];
-        const todayIndex = updatedPriceData.findIndex(p => p.date === today);
-        
-        if (todayIndex >= 0) {
-          updatedPriceData[todayIndex].price = price;
+        if (data.length > 0) {
+          // Sort data by date
+          data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          
+          // Set the earliest and latest dates
+          const earliest = data[0].date;
+          const latest = data[data.length - 1].date;
+          
+          setEarliestDate(earliest);
+          setLatestDate(latest);
+          
+          // Default to full date range
+          setParams(prev => ({
+            ...prev,
+            startDate: earliest,
+            endDate: latest
+          }));
+          
+          setPriceData(data);
         } else {
-          updatedPriceData.push({
-            date: today,
-            price: price
+          toast({
+            title: "No Data",
+            description: "No price data available. Using mock data.",
+            variant: "destructive"
           });
         }
-        
-        setPriceData(updatedPriceData);
-        
-        if (params.startDate && params.endDate) {
-          const backtestResult = runBacktest(updatedPriceData, params);
-          setResult(backtestResult);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch real-time price:", error);
-      if (isRealtime) {
+      } catch (error) {
+        console.error("Failed to load price data:", error);
         toast({
-          title: "Real-time Update Failed",
-          description: "Could not fetch the latest Bitcoin price.",
+          title: "Error",
+          description: "Failed to load price data. Using mock data instead.",
           variant: "destructive"
         });
-        setIsRealtime(false);
+      } finally {
+        setIsLoading(false);
       }
-    }
-  };
+    };
 
-  const handleApiKeySubmit = () => {
-    if (apiKey.trim()) {
-      saveApiKey(apiKey.trim());
-      setShowApiKeyInput(false);
-      loadData();
-      toast({
-        title: "API Key Saved",
-        description: "Your CryptoCompare API key has been saved.",
-      });
-    }
-  };
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const data = await fetchHistoricalPrices();
-      
-      if (data.length > 0) {
-        data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        const earliest = data[0].date;
-        const latest = data[data.length - 1].date;
-        setEarliestDate(earliest);
-        setLatestDate(latest);
-        setParams(prev => ({
-          ...prev,
-          startDate: earliest,
-          endDate: latest
-        }));
-        setPriceData(data);
-      } else {
-        toast({
-          title: "No Data",
-          description: "No price data available. Using mock data.",
-          variant: "destructive"
-        });
-      }
-    } catch (error: any) {
-      console.error("Failed to load price data:", error);
-      if (error.message.includes("API key")) {
-        setShowApiKeyInput(true);
-      }
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load price data. Using mock data instead.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
     loadData();
   }, [toast]);
 
+  // Run backtest with current parameters
   const handleRunBacktest = () => {
     if (priceData.length === 0) {
       toast({
@@ -166,6 +96,7 @@ const Index = () => {
     
     setIsLoading(true);
     
+    // Use setTimeout to ensure UI updates before heavy computation
     setTimeout(() => {
       try {
         const backtestResult = runBacktest(priceData, params);
@@ -183,16 +114,6 @@ const Index = () => {
     }, 100);
   };
 
-  const toggleRealtime = () => {
-    setIsRealtime(prev => !prev);
-    if (!isRealtime) {
-      toast({
-        title: "Real-time Updates Enabled",
-        description: "Bitcoin price will update every 10 seconds."
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <header className="border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-10">
@@ -204,48 +125,9 @@ const Index = () => {
                 Crypto <span className="text-bitcoin">Rebalance</span> Backtester
               </h1>
             </div>
-            <div className="flex gap-2">
-              {currentPrice && (
-                <div className="hidden sm:flex items-center border rounded-md px-3 py-1 bg-white">
-                  <span className="text-sm text-muted-foreground mr-2">BTC:</span>
-                  <span className="font-medium text-bitcoin">
-                    ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              )}
-              <Button
-                variant="outline"
-                onClick={toggleRealtime}
-                size="sm"
-                className={isRealtime ? "bg-bitcoin/10 border-bitcoin text-bitcoin" : ""}
-              >
-                {isRealtime ? "Stop Updates" : "Live Updates"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setShowApiKeyInput(true)}
-                size="sm"
-              >
-                Set API Key
-              </Button>
-            </div>
           </div>
         </div>
       </header>
-
-      {showApiKeyInput && (
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex gap-2 items-center max-w-md mx-auto">
-            <Input
-              type="password"
-              placeholder="Enter CryptoCompare API Key (optional)"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-            <Button onClick={handleApiKeySubmit}>Save</Button>
-          </div>
-        </div>
-      )}
 
       <main className="container mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 text-center max-w-2xl mx-auto animate-fade-in">
@@ -282,7 +164,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center text-sm text-muted-foreground">
             <p>
-              Historical Bitcoin data provided by CryptoCompare API. Past performance is not indicative of future results.
+              Historical Bitcoin data provided by CoinGecko API. Past performance is not indicative of future results.
             </p>
             <p className="mt-2">
               © {new Date().getFullYear()} Crypto Rebalance Backtester

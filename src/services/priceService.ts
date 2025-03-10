@@ -1,46 +1,14 @@
 
 import { PriceDataPoint } from "../utils/backtestUtils";
 
-const API_KEY_STORAGE_KEY = 'cryptoCompareApiKey';
-
-// Function to get API key from localStorage
-const getApiKey = (): string | null => {
-  return localStorage.getItem(API_KEY_STORAGE_KEY);
-};
-
-// Function to save API key to localStorage
-export const saveApiKey = (apiKey: string): void => {
-  localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
-};
-
-// This function will fetch historical Bitcoin price data from CryptoCompare
+// This function will fetch historical Bitcoin price data from Yahoo Finance
 export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
-  const apiKey = getApiKey();
-  
   try {
-    // Calculate timestamp for January 1, 2015
-    const startDate = new Date('2015-01-01').getTime();
-    const endDate = new Date().getTime();
-    
-    // Using CryptoCompare API to get daily Bitcoin prices
-    const url = 'https://min-api.cryptocompare.com/data/v2/histoday';
-    const params = new URLSearchParams({
-      fsym: 'BTC',
-      tsym: 'USD',
-      limit: '2000', // Maximum allowed by API
-      toTs: Math.floor(endDate / 1000).toString()
-    });
-
-    const headers: HeadersInit = {
-      'Accept': 'application/json'
-    };
-    
-    // Add API key to headers if available
-    if (apiKey) {
-      headers['authorization'] = `Apikey ${apiKey}`;
-    }
-    
-    const response = await fetch(`${url}?${params.toString()}`, { headers });
+    // Since direct access to Yahoo Finance API is restricted by CORS,
+    // we'll use a free proxy service (yh-finance.p.rapidapi.com)
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily"
+    );
     
     if (!response.ok) {
       throw new Error("Failed to fetch price data");
@@ -48,57 +16,31 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     
     const data = await response.json();
     
-    if (data.Response === 'Error') {
-      throw new Error(data.Message || "CryptoCompare API Error");
-    }
-    
     // Format the data into our PriceDataPoint structure
-    const formattedPrices: PriceDataPoint[] = data.Data.Data.map(
-      (item: any) => ({
-        date: new Date(item.time * 1000).toISOString().split("T")[0], // YYYY-MM-DD format
-        price: item.close,
+    const formattedPrices: PriceDataPoint[] = data.prices.map(
+      (price: [number, number]) => ({
+        date: new Date(price[0]).toISOString().split("T")[0], // YYYY-MM-DD format
+        price: price[1],
       })
     );
-    
-    // Sort by date
-    formattedPrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
     return formattedPrices;
   } catch (error) {
     console.error("Error fetching historical prices:", error);
-    // Fallback to mock data
+    // Fallback to local data or show an error
     return mockPriceData();
-  }
-};
-
-// Function to fetch current Bitcoin price for real-time updates
-export const fetchCurrentPrice = async (): Promise<number> => {
-  try {
-    const response = await fetch(
-      'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD'
-    );
-    
-    if (!response.ok) {
-      throw new Error("Failed to fetch current price");
-    }
-    
-    const data = await response.json();
-    return data.USD;
-  } catch (error) {
-    console.error("Error fetching current price:", error);
-    throw error;
   }
 };
 
 // Fallback mock data in case the API fails
 const mockPriceData = (): PriceDataPoint[] => {
   // Generate some basic price data for demonstration purposes
-  const startDate = new Date("2015-01-01");
+  const startDate = new Date("2017-01-01");
   const endDate = new Date();
   const prices: PriceDataPoint[] = [];
   
-  // Bitcoin started around $300 in 2015 and had various cycles
-  let price = 300;
+  // Bitcoin started around $1,000 in 2017 and had various cycles
+  let price = 1000;
   let currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
@@ -110,8 +52,8 @@ const mockPriceData = (): PriceDataPoint[] => {
     const cycleFactor = Math.sin(cyclePosition * Math.PI * 2) * 0.1;
     
     // Add long-term growth trend
-    const yearsSince2015 = dayOfYear / 365;
-    const growthFactor = Math.pow(1.8, yearsSince2015) * 0.001;
+    const yearsSince2017 = dayOfYear / 365;
+    const growthFactor = Math.pow(1.5, yearsSince2017) * 0.001;
     
     // Add some daily noise
     const noiseFactor = (Math.random() - 0.5) * 0.05;
