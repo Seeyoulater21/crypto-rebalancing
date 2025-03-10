@@ -1,13 +1,16 @@
-
 import { PriceDataPoint } from "../utils/backtestUtils";
 
-// This function will fetch historical Bitcoin price data from Yahoo Finance
+// This function will fetch historical Bitcoin price data from CoinGecko
 export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
   try {
-    // Since direct access to Yahoo Finance API is restricted by CORS,
-    // we'll use a free proxy service (yh-finance.p.rapidapi.com)
+    // Calculate timestamp for January 1, 2015 (in milliseconds)
+    const startDate = new Date('2015-01-01').getTime();
+    const endDate = new Date().getTime();
+    
+    // Using CoinGecko API to get daily Bitcoin prices since 2015
+    // Note: CoinGecko's free tier has rate limits, so we're requesting the maximum allowed data
     const response = await fetch(
-      "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily"
+      `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=${Math.floor(startDate/1000)}&to=${Math.floor(endDate/1000)}`
     );
     
     if (!response.ok) {
@@ -24,7 +27,22 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
       })
     );
     
-    return formattedPrices;
+    // Filter out duplicate dates (keep only the last price for each day)
+    const uniquePrices: PriceDataPoint[] = [];
+    const dateMap = new Map<string, number>();
+    
+    formattedPrices.forEach((point) => {
+      dateMap.set(point.date, point.price);
+    });
+    
+    dateMap.forEach((price, date) => {
+      uniquePrices.push({ date, price });
+    });
+    
+    // Sort by date
+    uniquePrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    
+    return uniquePrices;
   } catch (error) {
     console.error("Error fetching historical prices:", error);
     // Fallback to local data or show an error
@@ -35,12 +53,12 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
 // Fallback mock data in case the API fails
 const mockPriceData = (): PriceDataPoint[] => {
   // Generate some basic price data for demonstration purposes
-  const startDate = new Date("2017-01-01");
+  const startDate = new Date("2015-01-01");
   const endDate = new Date();
   const prices: PriceDataPoint[] = [];
   
-  // Bitcoin started around $1,000 in 2017 and had various cycles
-  let price = 1000;
+  // Bitcoin started around $300 in 2015 and had various cycles
+  let price = 300;
   let currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
@@ -52,8 +70,8 @@ const mockPriceData = (): PriceDataPoint[] => {
     const cycleFactor = Math.sin(cyclePosition * Math.PI * 2) * 0.1;
     
     // Add long-term growth trend
-    const yearsSince2017 = dayOfYear / 365;
-    const growthFactor = Math.pow(1.5, yearsSince2017) * 0.001;
+    const yearsSince2015 = dayOfYear / 365;
+    const growthFactor = Math.pow(1.8, yearsSince2015) * 0.001;
     
     // Add some daily noise
     const noiseFactor = (Math.random() - 0.5) * 0.05;
