@@ -1,16 +1,39 @@
 import { PriceDataPoint } from "../utils/backtestUtils";
 
-// This function will fetch historical Bitcoin price data from CoinGecko
+const API_KEY_STORAGE_KEY = 'cmcApiKey';
+
+// Function to get API key from localStorage
+const getApiKey = (): string | null => {
+  return localStorage.getItem(API_KEY_STORAGE_KEY);
+};
+
+// Function to save API key to localStorage
+export const saveApiKey = (apiKey: string): void => {
+  localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+};
+
+// This function will fetch historical Bitcoin price data from CoinMarketCap
 export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
+  const apiKey = getApiKey();
+  
+  if (!apiKey) {
+    throw new Error("Please set your CoinMarketCap API key first");
+  }
+  
   try {
-    // Calculate timestamp for January 1, 2015 (in milliseconds)
+    // Calculate timestamp for January 1, 2015
     const startDate = new Date('2015-01-01').getTime();
     const endDate = new Date().getTime();
     
-    // Using CoinGecko API to get daily Bitcoin prices since 2015
-    // Note: CoinGecko's free tier has rate limits, so we're requesting the maximum allowed data
+    // Using CoinMarketCap API to get daily Bitcoin prices
     const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=${Math.floor(startDate/1000)}&to=${Math.floor(endDate/1000)}`
+      `https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/historical?symbol=BTC&time_start=${Math.floor(startDate/1000)}&time_end=${Math.floor(endDate/1000)}&interval=1d&convert=USD`,
+      {
+        headers: {
+          'X-CMC_PRO_API_KEY': apiKey,
+          'Accept': 'application/json'
+        }
+      }
     );
     
     if (!response.ok) {
@@ -20,32 +43,20 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     const data = await response.json();
     
     // Format the data into our PriceDataPoint structure
-    const formattedPrices: PriceDataPoint[] = data.prices.map(
-      (price: [number, number]) => ({
-        date: new Date(price[0]).toISOString().split("T")[0], // YYYY-MM-DD format
-        price: price[1],
+    const formattedPrices: PriceDataPoint[] = Object.entries(data.data.quotes).map(
+      ([timestamp, quote]: [string, any]) => ({
+        date: new Date(parseInt(timestamp) * 1000).toISOString().split("T")[0], // YYYY-MM-DD format
+        price: quote.USD.price,
       })
     );
     
-    // Filter out duplicate dates (keep only the last price for each day)
-    const uniquePrices: PriceDataPoint[] = [];
-    const dateMap = new Map<string, number>();
-    
-    formattedPrices.forEach((point) => {
-      dateMap.set(point.date, point.price);
-    });
-    
-    dateMap.forEach((price, date) => {
-      uniquePrices.push({ date, price });
-    });
-    
     // Sort by date
-    uniquePrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    formattedPrices.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     
-    return uniquePrices;
+    return formattedPrices;
   } catch (error) {
     console.error("Error fetching historical prices:", error);
-    // Fallback to local data or show an error
+    // Fallback to mock data
     return mockPriceData();
   }
 };

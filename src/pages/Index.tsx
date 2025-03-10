@@ -1,17 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import BacktestForm from "@/components/BacktestForm";
 import BacktestResults from "@/components/BacktestResults";
 import BacktestChart from "@/components/BacktestChart";
 import { BacktestParams, BacktestResult, runBacktest } from "@/utils/backtestUtils";
-import { fetchHistoricalPrices } from "@/services/priceService";
+import { fetchHistoricalPrices, saveApiKey } from "@/services/priceService";
 import { Bitcoin } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const { toast } = useToast();
   
-  // State management
   const [params, setParams] = useState<BacktestParams>({
     initialCapital: 10000,
     bitcoinRatio: 50,
@@ -25,56 +25,64 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [earliestDate, setEarliestDate] = useState<string>("");
   const [latestDate, setLatestDate] = useState<string>("");
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [apiKey, setApiKey] = useState("");
 
-  // Fetch historical price data on mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const data = await fetchHistoricalPrices();
-        
-        if (data.length > 0) {
-          // Sort data by date
-          data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-          
-          // Set the earliest and latest dates
-          const earliest = data[0].date;
-          const latest = data[data.length - 1].date;
-          
-          setEarliestDate(earliest);
-          setLatestDate(latest);
-          
-          // Default to full date range
-          setParams(prev => ({
-            ...prev,
-            startDate: earliest,
-            endDate: latest
-          }));
-          
-          setPriceData(data);
-        } else {
-          toast({
-            title: "No Data",
-            description: "No price data available. Using mock data.",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error("Failed to load price data:", error);
+  const handleApiKeySubmit = () => {
+    if (apiKey.trim()) {
+      saveApiKey(apiKey.trim());
+      setShowApiKeyInput(false);
+      loadData();
+      toast({
+        title: "API Key Saved",
+        description: "Your CoinMarketCap API key has been saved.",
+      });
+    }
+  };
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchHistoricalPrices();
+      
+      if (data.length > 0) {
+        data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const earliest = data[0].date;
+        const latest = data[data.length - 1].date;
+        setEarliestDate(earliest);
+        setLatestDate(latest);
+        setParams(prev => ({
+          ...prev,
+          startDate: earliest,
+          endDate: latest
+        }));
+        setPriceData(data);
+      } else {
         toast({
-          title: "Error",
-          description: "Failed to load price data. Using mock data instead.",
+          title: "No Data",
+          description: "No price data available. Using mock data.",
           variant: "destructive"
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error("Failed to load price data:", error);
+      if (error.message.includes("API key")) {
+        setShowApiKeyInput(true);
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to load price data. Using mock data instead.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadData();
   }, [toast]);
 
-  // Run backtest with current parameters
   const handleRunBacktest = () => {
     if (priceData.length === 0) {
       toast({
@@ -96,7 +104,6 @@ const Index = () => {
     
     setIsLoading(true);
     
-    // Use setTimeout to ensure UI updates before heavy computation
     setTimeout(() => {
       try {
         const backtestResult = runBacktest(priceData, params);
@@ -125,9 +132,30 @@ const Index = () => {
                 Crypto <span className="text-bitcoin">Rebalance</span> Backtester
               </h1>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowApiKeyInput(true)}
+              size="sm"
+            >
+              Set API Key
+            </Button>
           </div>
         </div>
       </header>
+
+      {showApiKeyInput && (
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex gap-2 items-center max-w-md mx-auto">
+            <Input
+              type="password"
+              placeholder="Enter CoinMarketCap API Key"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+            <Button onClick={handleApiKeySubmit}>Save</Button>
+          </div>
+        </div>
+      )}
 
       <main className="container mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 text-center max-w-2xl mx-auto animate-fade-in">
