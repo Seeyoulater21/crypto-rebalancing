@@ -1,10 +1,11 @@
-
 import { format } from "date-fns";
 
 export interface BacktestParams {
   initialCapital: number;
   bitcoinRatio: number;
   rebalanceThreshold: number;
+  startDate: string;
+  endDate: string;
 }
 
 export interface BacktestResult {
@@ -43,7 +44,17 @@ export const runBacktest = (
   priceData: PriceDataPoint[], 
   params: BacktestParams
 ): BacktestResult => {
-  const { initialCapital, bitcoinRatio, rebalanceThreshold } = params;
+  const { initialCapital, bitcoinRatio, rebalanceThreshold, startDate, endDate } = params;
+  
+  // Filter data by date range
+  const filteredPriceData = priceData.filter(
+    (point) => point.date >= startDate && point.date <= endDate
+  );
+  
+  // If no data in range, return error
+  if (!filteredPriceData.length) {
+    throw new Error("No price data available in the selected date range");
+  }
   
   // Initial allocation
   const initialBitcoinAllocation = initialCapital * (bitcoinRatio / 100);
@@ -59,7 +70,7 @@ export const runBacktest = (
   const lowerBound = targetRatio - threshold;
   
   // Initial state
-  let bitcoinAmount = initialBitcoinAllocation / priceData[0].price;
+  let bitcoinAmount = initialBitcoinAllocation / filteredPriceData[0].price;
   let usdAmount = initialUsdAllocation;
   let totalRebalances = 0;
   
@@ -68,12 +79,12 @@ export const runBacktest = (
   let minDrawdown = 0;
   
   // Buy and hold comparison
-  const buyHoldBitcoin = initialBitcoinAllocation / priceData[0].price;
+  const buyHoldBitcoin = initialBitcoinAllocation / filteredPriceData[0].price;
   const buyHoldUsd = initialUsdAllocation;
   
   // For each day in our price data
-  for (let i = 0; i < priceData.length; i++) {
-    const { date, price } = priceData[i];
+  for (let i = 0; i < filteredPriceData.length; i++) {
+    const { date, price } = filteredPriceData[i];
     
     // Calculate current portfolio value
     const bitcoinValue = bitcoinAmount * price;
@@ -129,7 +140,7 @@ export const runBacktest = (
   }
   
   // Calculate final values
-  const finalPrice = priceData[priceData.length - 1].price;
+  const finalPrice = filteredPriceData[filteredPriceData.length - 1].price;
   const finalBitcoinValue = bitcoinAmount * finalPrice;
   const finalBalance = finalBitcoinValue + usdAmount;
   
@@ -137,9 +148,9 @@ export const runBacktest = (
   const buyHoldBalance = (buyHoldBitcoin * finalPrice) + buyHoldUsd;
   
   // Calculate CAGR (Compound Annual Growth Rate)
-  const startDate = new Date(priceData[0].date);
-  const endDate = new Date(priceData[priceData.length - 1].date);
-  const years = (endDate.getTime() - startDate.getTime()) / (365 * 24 * 60 * 60 * 1000);
+  const startDateObj = new Date(filteredPriceData[0].date);
+  const endDateObj = new Date(filteredPriceData[filteredPriceData.length - 1].date);
+  const years = (endDateObj.getTime() - startDateObj.getTime()) / (365 * 24 * 60 * 60 * 1000);
   const cagr = ((Math.pow(finalBalance / initialCapital, 1 / years)) - 1) * 100;
   
   return {

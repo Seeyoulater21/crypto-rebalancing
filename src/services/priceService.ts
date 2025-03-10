@@ -1,12 +1,13 @@
 
 import { PriceDataPoint } from "../utils/backtestUtils";
 
-// This function will fetch historical Bitcoin price data from 2017 to now
+// This function will fetch historical Bitcoin price data from Yahoo Finance
 export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
   try {
-    // Use CoinGecko API to fetch historical Bitcoin prices
+    // Since direct access to Yahoo Finance API is restricted by CORS,
+    // we'll use a free proxy service (yh-finance.p.rapidapi.com)
     const response = await fetch(
-      "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=max&interval=daily"
+      "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&interval=daily"
     );
     
     if (!response.ok) {
@@ -15,16 +16,8 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     
     const data = await response.json();
     
-    // Filter data from 2017-01-01 onwards
-    const startTimestamp = new Date("2017-01-01").getTime();
-    
-    // CoinGecko returns prices as [timestamp, price] pairs
-    const prices = data.prices.filter(
-      (price: [number, number]) => price[0] >= startTimestamp
-    );
-    
     // Format the data into our PriceDataPoint structure
-    const formattedPrices: PriceDataPoint[] = prices.map(
+    const formattedPrices: PriceDataPoint[] = data.prices.map(
       (price: [number, number]) => ({
         date: new Date(price[0]).toISOString().split("T")[0], // YYYY-MM-DD format
         price: price[1],
