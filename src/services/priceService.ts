@@ -1,6 +1,7 @@
+
 import { PriceDataPoint } from "../utils/backtestUtils";
 
-const API_KEY_STORAGE_KEY = 'cmcApiKey';
+const API_KEY_STORAGE_KEY = 'cryptoCompareApiKey';
 
 // Function to get API key from localStorage
 const getApiKey = (): string | null => {
@@ -12,29 +13,34 @@ export const saveApiKey = (apiKey: string): void => {
   localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
 };
 
-// This function will fetch historical Bitcoin price data from CoinMarketCap
+// This function will fetch historical Bitcoin price data from CryptoCompare
 export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
   const apiKey = getApiKey();
-  
-  if (!apiKey) {
-    throw new Error("Please set your CoinMarketCap API key first");
-  }
   
   try {
     // Calculate timestamp for January 1, 2015
     const startDate = new Date('2015-01-01').getTime();
     const endDate = new Date().getTime();
     
-    // Using CoinMarketCap API to get daily Bitcoin prices
-    const response = await fetch(
-      `https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/historical?symbol=BTC&time_start=${Math.floor(startDate/1000)}&time_end=${Math.floor(endDate/1000)}&interval=1d&convert=USD`,
-      {
-        headers: {
-          'X-CMC_PRO_API_KEY': apiKey,
-          'Accept': 'application/json'
-        }
-      }
-    );
+    // Using CryptoCompare API to get daily Bitcoin prices
+    const url = 'https://min-api.cryptocompare.com/data/v2/histoday';
+    const params = new URLSearchParams({
+      fsym: 'BTC',
+      tsym: 'USD',
+      limit: '2000', // Maximum allowed by API
+      toTs: Math.floor(endDate / 1000).toString()
+    });
+
+    const headers: HeadersInit = {
+      'Accept': 'application/json'
+    };
+    
+    // Add API key to headers if available
+    if (apiKey) {
+      headers['authorization'] = `Apikey ${apiKey}`;
+    }
+    
+    const response = await fetch(`${url}?${params.toString()}`, { headers });
     
     if (!response.ok) {
       throw new Error("Failed to fetch price data");
@@ -42,11 +48,15 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     
     const data = await response.json();
     
+    if (data.Response === 'Error') {
+      throw new Error(data.Message || "CryptoCompare API Error");
+    }
+    
     // Format the data into our PriceDataPoint structure
-    const formattedPrices: PriceDataPoint[] = Object.entries(data.data.quotes).map(
-      ([timestamp, quote]: [string, any]) => ({
-        date: new Date(parseInt(timestamp) * 1000).toISOString().split("T")[0], // YYYY-MM-DD format
-        price: quote.USD.price,
+    const formattedPrices: PriceDataPoint[] = data.Data.Data.map(
+      (item: any) => ({
+        date: new Date(item.time * 1000).toISOString().split("T")[0], // YYYY-MM-DD format
+        price: item.close,
       })
     );
     
@@ -58,6 +68,25 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     console.error("Error fetching historical prices:", error);
     // Fallback to mock data
     return mockPriceData();
+  }
+};
+
+// Function to fetch current Bitcoin price for real-time updates
+export const fetchCurrentPrice = async (): Promise<number> => {
+  try {
+    const response = await fetch(
+      'https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD'
+    );
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch current price");
+    }
+    
+    const data = await response.json();
+    return data.USD;
+  } catch (error) {
+    console.error("Error fetching current price:", error);
+    throw error;
   }
 };
 

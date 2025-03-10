@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import BacktestForm from "@/components/BacktestForm";
 import BacktestResults from "@/components/BacktestResults";
 import BacktestChart from "@/components/BacktestChart";
 import { BacktestParams, BacktestResult, runBacktest } from "@/utils/backtestUtils";
-import { fetchHistoricalPrices, saveApiKey } from "@/services/priceService";
+import { fetchHistoricalPrices, fetchCurrentPrice, saveApiKey } from "@/services/priceService";
 import { Bitcoin } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,68 @@ const Index = () => {
   const [latestDate, setLatestDate] = useState<string>("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKey, setApiKey] = useState("");
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
+  const [isRealtime, setIsRealtime] = useState<boolean>(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (isRealtime) {
+      fetchRealtimePrice();
+      
+      timerRef.current = window.setInterval(fetchRealtimePrice, 10000);
+    } else {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isRealtime]);
+
+  const fetchRealtimePrice = async () => {
+    try {
+      const price = await fetchCurrentPrice();
+      setCurrentPrice(price);
+      
+      if (result && priceData.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        
+        const updatedPriceData = [...priceData];
+        const todayIndex = updatedPriceData.findIndex(p => p.date === today);
+        
+        if (todayIndex >= 0) {
+          updatedPriceData[todayIndex].price = price;
+        } else {
+          updatedPriceData.push({
+            date: today,
+            price: price
+          });
+        }
+        
+        setPriceData(updatedPriceData);
+        
+        if (params.startDate && params.endDate) {
+          const backtestResult = runBacktest(updatedPriceData, params);
+          setResult(backtestResult);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch real-time price:", error);
+      if (isRealtime) {
+        toast({
+          title: "Real-time Update Failed",
+          description: "Could not fetch the latest Bitcoin price.",
+          variant: "destructive"
+        });
+        setIsRealtime(false);
+      }
+    }
+  };
 
   const handleApiKeySubmit = () => {
     if (apiKey.trim()) {
@@ -35,7 +97,7 @@ const Index = () => {
       loadData();
       toast({
         title: "API Key Saved",
-        description: "Your CoinMarketCap API key has been saved.",
+        description: "Your CryptoCompare API key has been saved.",
       });
     }
   };
@@ -121,6 +183,16 @@ const Index = () => {
     }, 100);
   };
 
+  const toggleRealtime = () => {
+    setIsRealtime(prev => !prev);
+    if (!isRealtime) {
+      toast({
+        title: "Real-time Updates Enabled",
+        description: "Bitcoin price will update every 10 seconds."
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <header className="border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-10">
@@ -132,13 +204,31 @@ const Index = () => {
                 Crypto <span className="text-bitcoin">Rebalance</span> Backtester
               </h1>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowApiKeyInput(true)}
-              size="sm"
-            >
-              Set API Key
-            </Button>
+            <div className="flex gap-2">
+              {currentPrice && (
+                <div className="hidden sm:flex items-center border rounded-md px-3 py-1 bg-white">
+                  <span className="text-sm text-muted-foreground mr-2">BTC:</span>
+                  <span className="font-medium text-bitcoin">
+                    ${currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
+              <Button
+                variant="outline"
+                onClick={toggleRealtime}
+                size="sm"
+                className={isRealtime ? "bg-bitcoin/10 border-bitcoin text-bitcoin" : ""}
+              >
+                {isRealtime ? "Stop Updates" : "Live Updates"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowApiKeyInput(true)}
+                size="sm"
+              >
+                Set API Key
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -148,7 +238,7 @@ const Index = () => {
           <div className="flex gap-2 items-center max-w-md mx-auto">
             <Input
               type="password"
-              placeholder="Enter CoinMarketCap API Key"
+              placeholder="Enter CryptoCompare API Key (optional)"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
@@ -192,7 +282,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center text-sm text-muted-foreground">
             <p>
-              Historical Bitcoin data provided by CoinGecko API. Past performance is not indicative of future results.
+              Historical Bitcoin data provided by CryptoCompare API. Past performance is not indicative of future results.
             </p>
             <p className="mt-2">
               © {new Date().getFullYear()} Crypto Rebalance Backtester
