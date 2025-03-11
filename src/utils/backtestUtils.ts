@@ -53,6 +53,11 @@ export const runBacktest = (
     (point) => point.date >= startDate && point.date <= endDate
   );
   
+  // Round all prices to integer values
+  filteredPriceData.forEach(point => {
+    point.price = Math.round(point.price);
+  });
+  
   // If no data in range, return error
   if (!filteredPriceData.length) {
     throw new Error("No price data available in the selected date range");
@@ -148,7 +153,7 @@ export const runBacktest = (
     // Store performance data
     performanceData.push({
       date,
-      formattedDate: format(new Date(date), "MMM dd, yyyy"),
+      formattedDate: format(new Date(date), "MMM yyyy"),  // Changed to month and year only
       price,
       totalBalance: totalValue,
       bitcoinBalance: bitcoinAmount * price,

@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { format, addYears, subYears, addMonths, subMonths } from "date-fns";
+import { format, addYears, subYears } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -73,15 +73,19 @@ const BacktestForm = ({
     onParamsChange({ ...params, rebalanceThreshold: value[0] });
   };
 
-  // Date selection helpers
-  const handleStartDateChange = (date: Date) => {
-    const formattedDate = date.toISOString().split('T')[0];
-    onParamsChange({ ...params, startDate: formattedDate });
-  };
-
-  const handleEndDateChange = (date: Date) => {
-    const formattedDate = date.toISOString().split('T')[0];
-    onParamsChange({ ...params, endDate: formattedDate });
+  // Handle month and year selection
+  const handleMonthYearSelect = (date: Date, isStartDate: boolean) => {
+    // Set to first day of the month
+    const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+    const formattedDate = firstDayOfMonth.toISOString().split('T')[0];
+    
+    if (isStartDate) {
+      onParamsChange({ ...params, startDate: formattedDate });
+      setStartDateOpen(false);
+    } else {
+      onParamsChange({ ...params, endDate: formattedDate });
+      setEndDateOpen(false);
+    }
   };
 
   // Handle predefined range selection
@@ -103,13 +107,13 @@ const BacktestForm = ({
         startDate = subYears(endDate, 1);
         break;
       case "6m":
-        startDate = subMonths(endDate, 6);
+        startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 6, 1);
         break;
       case "3m":
-        startDate = subMonths(endDate, 3);
+        startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 3, 1);
         break;
       case "1m":
-        startDate = subMonths(endDate, 1);
+        startDate = new Date(endDate.getFullYear(), endDate.getMonth() - 1, 1);
         break;
       default:
         startDate = new Date(earliestDate);
@@ -120,30 +124,22 @@ const BacktestForm = ({
       startDate = new Date(earliestDate);
     }
     
+    // Set to first day of month for both dates
+    const firstDayOfStartMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const firstDayOfEndMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    
     onParamsChange({
       ...params,
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0]
+      startDate: firstDayOfStartMonth.toISOString().split('T')[0],
+      endDate: firstDayOfEndMonth.toISOString().split('T')[0]
     });
     
     // Update date view states
-    setStartDateView(startDate);
-    setEndDateView(endDate);
+    setStartDateView(firstDayOfStartMonth);
+    setEndDateView(firstDayOfEndMonth);
   };
   
-  // Custom calendar navigation
-  const goPrevMonth = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
-    if (dateView) {
-      setDateView(subMonths(dateView, 1));
-    }
-  };
-  
-  const goNextMonth = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
-    if (dateView) {
-      setDateView(addMonths(dateView, 1));
-    }
-  };
-  
+  // Navigation buttons for year
   const goPrevYear = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
     if (dateView) {
       setDateView(subYears(dateView, 1));
@@ -156,11 +152,10 @@ const BacktestForm = ({
     }
   };
   
-  // Custom month picker renderer
+  // Month picker renderer
   const renderMonthPicker = (
     currentDate: Date | undefined,
-    onChange: (date: Date) => void,
-    setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>
+    onChange: (date: Date) => void
   ) => {
     if (!currentDate) return null;
     
@@ -178,21 +173,19 @@ const BacktestForm = ({
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => goPrevYear(currentDate, setDateView)}
+            onClick={() => goPrevYear(currentDate, currentDate === startDateView ? setStartDateView : setEndDateView)}
             className="h-8 w-8 p-0"
           >
             <ChevronLeft className="h-4 w-4" />
-            <ChevronLeft className="h-4 w-4 -ml-2" />
           </Button>
           <div className="font-medium">{currentYear}</div>
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => goNextYear(currentDate, setDateView)}
+            onClick={() => goNextYear(currentDate, currentDate === startDateView ? setStartDateView : setEndDateView)}
             className="h-8 w-8 p-0"
           >
             <ChevronRight className="h-4 w-4" />
-            <ChevronRight className="h-4 w-4 -ml-2" />
           </Button>
         </div>
         <div className="grid grid-cols-3 gap-2">
@@ -209,9 +202,7 @@ const BacktestForm = ({
                   isSelected && "bg-bitcoin hover:bg-bitcoin/90 text-white"
                 )}
                 onClick={() => {
-                  const newDate = new Date(currentDate);
-                  newDate.setMonth(idx);
-                  setDateView(newDate);
+                  const newDate = new Date(currentYear, idx, 1);
                   onChange(newDate);
                 }}
               >
@@ -224,10 +215,10 @@ const BacktestForm = ({
     );
   };
   
-  // Date display formatting
+  // Date display formatting - show only month and year
   const formatDateDisplay = (dateString: string | undefined) => {
     if (!dateString) return "Select date";
-    return format(new Date(dateString), "MMM dd, yyyy");
+    return format(new Date(dateString), "MMM yyyy");
   };
 
   return (
@@ -342,8 +333,7 @@ const BacktestForm = ({
                 <PopoverContent className="w-auto p-0 z-50" align="start">
                   {renderMonthPicker(
                     startDateView, 
-                    handleStartDateChange,
-                    setStartDateView
+                    (date) => handleMonthYearSelect(date, true)
                   )}
                 </PopoverContent>
               </Popover>
@@ -366,8 +356,7 @@ const BacktestForm = ({
                 <PopoverContent className="w-auto p-0 z-50" align="start">
                   {renderMonthPicker(
                     endDateView,
-                    handleEndDateChange,
-                    setEndDateView
+                    (date) => handleMonthYearSelect(date, false)
                   )}
                 </PopoverContent>
               </Popover>
