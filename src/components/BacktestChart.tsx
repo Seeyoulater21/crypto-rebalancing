@@ -44,7 +44,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="glass-panel p-4 rounded-lg text-sm">
+        <div className="glass-panel p-4 rounded-lg shadow-sm bg-white/90 backdrop-blur-sm text-sm border border-gray-100">
           <p className="font-medium">{data.formattedDate}</p>
           <p className="text-xs text-muted-foreground mb-2">BTC Price: {formatCurrency(data.price)}</p>
           <p className="mb-1">Portfolio Value: <span className="font-medium">{formatCurrency(data.totalBalance)}</span></p>
@@ -63,14 +63,9 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
     return null;
   };
   
-  // Responsive font sizes
-  const getFontSize = () => {
-    return window.innerWidth < 768 ? "10px" : "12px";
-  };
-  
   if (isLoading) {
     return (
-      <Card className="rounded-xl smooth-shadow h-[500px] animate-pulse">
+      <Card className="rounded-xl smooth-shadow h-[400px] animate-pulse">
         <div className="p-6 h-full flex items-center justify-center">
           <div className="text-muted-foreground">Loading chart data...</div>
         </div>
@@ -80,7 +75,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
   
   if (!performanceData.length) {
     return (
-      <Card className="rounded-xl smooth-shadow h-[500px]">
+      <Card className="rounded-xl smooth-shadow h-[400px]">
         <div className="p-6 h-full flex items-center justify-center">
           <div className="text-muted-foreground">No data available</div>
         </div>
@@ -108,25 +103,35 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
           </Tabs>
         </div>
         
-        <div className="h-[400px] w-full">
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={filteredData}
-              margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+              margin={{ top: 20, right: 10, left: 10, bottom: 20 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <defs>
+                <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f7931a" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#f7931a" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
               <XAxis 
                 dataKey="formattedDate" 
                 tickFormatter={(value) => value.slice(0, 6)} 
-                tick={{ fontSize: getFontSize() }} 
-                padding={{ left: 20, right: 20 }}
+                tick={{ fontSize: 10, fill: '#888' }} 
+                axisLine={{ stroke: '#eee' }}
+                tickLine={{ stroke: '#eee' }}
+                padding={{ left: 10, right: 10 }}
                 interval="preserveStartEnd"
-                minTickGap={30}
+                minTickGap={40}
               />
               <YAxis 
-                tickFormatter={(value) => `$${Math.round(value).toLocaleString()}`} 
-                tick={{ fontSize: getFontSize() }} 
-                width={60}
+                tickFormatter={(value) => `$${Math.round(value/1000)}k`} 
+                tick={{ fontSize: 10, fill: '#888' }} 
+                axisLine={{ stroke: '#eee' }}
+                tickLine={{ stroke: '#eee' }}
+                width={40}
                 domain={[(dataMin: number) => Math.floor(dataMin * 0.9), (dataMax: number) => Math.ceil(dataMax * 1.1)]}
               />
               <Tooltip content={<CustomTooltip />} />
@@ -138,7 +143,8 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
                 dot={false}
                 activeDot={{ r: 6, stroke: "#fff", strokeWidth: 2 }}
                 isAnimationActive={true}
-                animationDuration={2000}
+                animationDuration={1000}
+                fill="url(#colorBalance)"
               />
               
               {/* Render Reference Dots for rebalance events */}
@@ -147,7 +153,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
                   key={`rebalance-${index}`}
                   x={event.formattedDate}
                   y={event.totalBalance}
-                  r={4}
+                  r={5}
                   fill="#f7931a"
                   stroke="#fff"
                   strokeWidth={2}
@@ -155,6 +161,15 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
               ))}
             </LineChart>
           </ResponsiveContainer>
+          
+          {rebalanceEvents.length > 0 && (
+            <div className="text-xs text-center mt-2 text-muted-foreground">
+              <span className="inline-flex items-center">
+                <span className="inline-block w-3 h-3 bg-bitcoin rounded-full mr-1"></span>
+                {rebalanceEvents.length} Rebalancing Events
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </Card>

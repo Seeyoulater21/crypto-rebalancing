@@ -74,30 +74,20 @@ const Index = () => {
     loadData();
   }, [toast]);
 
-  // Run backtest with current parameters
-  const handleRunBacktest = () => {
-    if (priceData.length === 0) {
-      toast({
-        title: "No Data",
-        description: "No price data available to run backtest.",
-        variant: "destructive"
-      });
+  // Run backtest automatically when parameters change
+  useEffect(() => {
+    if (
+      priceData.length === 0 ||
+      !params.startDate || 
+      !params.endDate || 
+      isLoading
+    ) {
       return;
     }
     
-    if (!params.startDate || !params.endDate) {
-      toast({
-        title: "Missing Dates",
-        description: "Please select both start and end dates.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    // Use setTimeout to ensure UI updates before heavy computation
-    setTimeout(() => {
+    const runBacktestDebounced = setTimeout(() => {
+      setIsLoading(true);
+      
       try {
         const backtestResult = runBacktest(priceData, params);
         setResult(backtestResult);
@@ -111,7 +101,13 @@ const Index = () => {
       } finally {
         setIsLoading(false);
       }
-    }, 100);
+    }, 300); // Debounce for 300ms to prevent too many calculations
+
+    return () => clearTimeout(runBacktestDebounced);
+  }, [params, priceData, toast]);
+
+  const handleParamsChange = (newParams: BacktestParams) => {
+    setParams(newParams);
   };
 
   return (
@@ -142,8 +138,7 @@ const Index = () => {
           <div className="lg:col-span-1">
             <BacktestForm
               params={params}
-              onParamsChange={setParams}
-              onRunBacktest={handleRunBacktest}
+              onParamsChange={handleParamsChange}
               isLoading={isLoading}
               earliestDate={earliestDate}
               latestDate={latestDate}

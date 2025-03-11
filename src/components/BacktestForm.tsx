@@ -1,6 +1,6 @@
 
-import React, { useEffect } from "react";
-import { format } from "date-fns";
+import React from "react";
+import { format, parse, addYears, subYears } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { BacktestParams } from "@/utils/backtestUtils";
-import { Bitcoin, Percent, DollarSign, RotateCw, CalendarIcon } from "lucide-react";
+import { Bitcoin, Percent, DollarSign, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BacktestFormProps {
   params: BacktestParams;
   onParamsChange: (params: BacktestParams) => void;
-  onRunBacktest: () => void;
   isLoading: boolean;
   earliestDate: string;
   latestDate: string;
@@ -27,7 +26,6 @@ interface BacktestFormProps {
 const BacktestForm = ({
   params,
   onParamsChange,
-  onRunBacktest,
   isLoading,
   earliestDate,
   latestDate
@@ -62,11 +60,56 @@ const BacktestForm = ({
     }
   };
 
-  useEffect(() => {
-    // Run initial backtest on mount
-    onRunBacktest();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Year navigation handlers for calendars
+  const getYearNavigation = (
+    selectedDate: string | undefined, 
+    onDateChange: (date: Date) => void, 
+    minDate: string, 
+    maxDate: string
+  ) => {
+    const currentDate = selectedDate 
+      ? new Date(selectedDate) 
+      : new Date(minDate);
+    
+    const minYearDate = new Date(minDate);
+    const maxYearDate = new Date(maxDate);
+    
+    return (
+      <div className="flex items-center justify-between px-2 py-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            const newDate = subYears(currentDate, 1);
+            if (newDate >= minYearDate) {
+              onDateChange(newDate);
+            }
+          }}
+          disabled={currentDate.getFullYear() <= minYearDate.getFullYear()}
+          className="h-6 w-6"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="text-sm font-medium">
+          {currentDate.getFullYear()}
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            const newDate = addYears(currentDate, 1);
+            if (newDate <= maxYearDate) {
+              onDateChange(newDate);
+            }
+          }}
+          disabled={currentDate.getFullYear() >= maxYearDate.getFullYear()}
+          className="h-6 w-6"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <Card className="rounded-xl overflow-hidden animate-scale-in smooth-shadow">
@@ -166,14 +209,20 @@ const BacktestForm = ({
                     {params.startDate ? format(new Date(params.startDate), "MMM dd, yyyy") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
+                  {getYearNavigation(
+                    params.startDate, 
+                    handleStartDateChange, 
+                    earliestDate, 
+                    params.endDate || latestDate
+                  )}
                   <Calendar
                     mode="single"
                     selected={params.startDate ? new Date(params.startDate) : undefined}
                     onSelect={handleStartDateChange}
                     disabled={(date) => {
                       return (
-                        date > new Date(params.endDate) ||
+                        date > new Date(params.endDate || latestDate) ||
                         date < new Date(earliestDate) ||
                         date > new Date(latestDate)
                       );
@@ -199,14 +248,20 @@ const BacktestForm = ({
                     {params.endDate ? format(new Date(params.endDate), "MMM dd, yyyy") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0" align="start">
+                  {getYearNavigation(
+                    params.endDate, 
+                    handleEndDateChange, 
+                    params.startDate || earliestDate, 
+                    latestDate
+                  )}
                   <Calendar
                     mode="single"
                     selected={params.endDate ? new Date(params.endDate) : undefined}
                     onSelect={handleEndDateChange}
                     disabled={(date) => {
                       return (
-                        date < new Date(params.startDate) ||
+                        date < new Date(params.startDate || earliestDate) ||
                         date > new Date(latestDate) ||
                         date < new Date(earliestDate)
                       );
@@ -219,24 +274,6 @@ const BacktestForm = ({
             </div>
           </div>
         </div>
-
-        <Button 
-          onClick={onRunBacktest} 
-          disabled={isLoading}
-          className="w-full bg-bitcoin hover:bg-bitcoin-dark text-white gap-2"
-        >
-          {isLoading ? (
-            <>
-              <RotateCw className="h-4 w-4 animate-spin" />
-              Running Backtest...
-            </>
-          ) : (
-            <>
-              <RotateCw className="h-4 w-4" />
-              Run Backtest
-            </>
-          )}
-        </Button>
       </CardContent>
     </Card>
   );
