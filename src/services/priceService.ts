@@ -12,8 +12,9 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     }
     
     const data = await response.json();
+    console.log("Loaded data format:", data.slice(0, 2));
     
-    // If data.json has the expected format with prices array
+    // Check data format and process accordingly
     if (Array.isArray(data.prices)) {
       // Format the data into our PriceDataPoint structure
       const formattedPrices: PriceDataPoint[] = data.prices.map(
@@ -23,14 +24,23 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
         })
       );
       
+      console.log("Processed data format:", formattedPrices.slice(0, 2));
       return formattedPrices;
     } 
     // If data.json is already in our format
     else if (Array.isArray(data) && data.length > 0 && 'date' in data[0] && 'price' in data[0]) {
       return data;
     }
+    // If data.json has a different known format (coinbase, etc)
+    else if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0]) && data[0].length >= 2) {
+      return data.map((item: any[]) => ({
+        date: new Date(item[0]).toISOString().split("T")[0],
+        price: parseFloat(item[1])
+      }));
+    }
     // Unexpected format
     else {
+      console.error("Unknown data format:", data);
       throw new Error("Unexpected data format in data.json");
     }
   } catch (error) {

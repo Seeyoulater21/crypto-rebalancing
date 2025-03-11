@@ -1,3 +1,4 @@
+
 import { format } from "date-fns";
 
 export interface BacktestParams {
@@ -56,18 +57,19 @@ export const runBacktest = (
     throw new Error("No price data available in the selected date range");
   }
   
-  // Initial allocation
-  const initialBitcoinAllocation = initialCapital * (bitcoinRatio / 100);
-  const initialUsdAllocation = initialCapital - initialBitcoinAllocation;
-  
   // The target ratio in decimal form (e.g., 0.5 for 50%)
   const targetRatio = bitcoinRatio / 100;
+  
   // The threshold in decimal form (e.g., 0.05 for 5%)
   const threshold = rebalanceThreshold / 100;
   
   // Upper and lower bounds for when to rebalance
   const upperBound = targetRatio + threshold;
   const lowerBound = targetRatio - threshold;
+  
+  // Initial allocation
+  const initialBitcoinAllocation = initialCapital * targetRatio;
+  const initialUsdAllocation = initialCapital - initialBitcoinAllocation;
   
   // Initial state
   let bitcoinAmount = initialBitcoinAllocation / filteredPriceData[0].price;
@@ -100,10 +102,7 @@ export const runBacktest = (
       const targetBitcoinValue = totalValue * targetRatio;
       const targetUsdValue = totalValue - targetBitcoinValue;
       
-      // Calculate how much to buy/sell
-      const bitcoinValueDelta = targetBitcoinValue - bitcoinValue;
-      
-      // Update amounts
+      // Update amounts - no need to separately calculate delta
       bitcoinAmount = targetBitcoinValue / price;
       usdAmount = targetUsdValue;
       
@@ -150,8 +149,12 @@ export const runBacktest = (
   // Calculate CAGR (Compound Annual Growth Rate)
   const startDateObj = new Date(filteredPriceData[0].date);
   const endDateObj = new Date(filteredPriceData[filteredPriceData.length - 1].date);
-  const years = (endDateObj.getTime() - startDateObj.getTime()) / (365 * 24 * 60 * 60 * 1000);
-  const cagr = ((Math.pow(finalBalance / initialCapital, 1 / years)) - 1) * 100;
+  const yearsDiff = (endDateObj.getTime() - startDateObj.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  
+  // Handle edge case where dates are too close
+  const cagr = yearsDiff > 0.01 
+    ? ((Math.pow(finalBalance / initialCapital, 1 / yearsDiff)) - 1) * 100
+    : 0;
   
   return {
     finalBalance,

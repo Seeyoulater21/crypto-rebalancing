@@ -124,7 +124,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
                 tickLine={{ stroke: '#eee' }}
                 padding={{ left: 10, right: 10 }}
                 interval="preserveStartEnd"
-                minTickGap={40}
+                minTickGap={60}
               />
               <YAxis 
                 tickFormatter={(value) => `$${Math.round(value/1000)}k`} 
@@ -132,7 +132,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
                 axisLine={{ stroke: '#eee' }}
                 tickLine={{ stroke: '#eee' }}
                 width={40}
-                domain={[(dataMin: number) => Math.floor(dataMin * 0.9), (dataMax: number) => Math.ceil(dataMax * 1.1)]}
+                domain={[(dataMin: number) => Math.floor(dataMin * 0.95), (dataMax: number) => Math.ceil(dataMax * 1.05)]}
               />
               <Tooltip content={<CustomTooltip />} />
               <Line
@@ -153,7 +153,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
                   key={`rebalance-${index}`}
                   x={event.formattedDate}
                   y={event.totalBalance}
-                  r={5}
+                  r={4}
                   fill="#f7931a"
                   stroke="#fff"
                   strokeWidth={2}
