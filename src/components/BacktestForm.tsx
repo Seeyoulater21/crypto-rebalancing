@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { format, parse, addYears, subYears, addMonths, subMonths } from "date-fns";
+import { format, addYears, subYears, addMonths, subMonths } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -236,7 +236,7 @@ const BacktestForm = ({
                     {params.startDate ? format(new Date(params.startDate), "MMM dd, yyyy") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-50" align="start">
                   <Calendar
                     mode="single"
                     selected={params.startDate ? new Date(params.startDate) : undefined}
@@ -269,7 +269,7 @@ const BacktestForm = ({
                     {params.endDate ? format(new Date(params.endDate), "MMM dd, yyyy") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-50" align="start">
                   <Calendar
                     mode="single"
                     selected={params.endDate ? new Date(params.endDate) : undefined}
@@ -287,6 +287,16 @@ const BacktestForm = ({
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+          
+          <div className="text-xs text-muted-foreground mt-2 text-center">
+            {params.startDate && params.endDate ? (
+              <span>
+                Backtest period: {format(new Date(params.startDate), "MMM dd, yyyy")} to {format(new Date(params.endDate), "MMM dd, yyyy")}
+              </span>
+            ) : (
+              <span>Select date range to run backtest</span>
+            )}
           </div>
         </div>
       </CardContent>

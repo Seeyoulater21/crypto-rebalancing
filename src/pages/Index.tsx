@@ -52,6 +52,11 @@ const Index = () => {
           }));
           
           setPriceData(data);
+          
+          toast({
+            title: "Data Loaded",
+            description: `Loaded ${data.length} price records from ${earliest} to ${latest}`,
+          });
         } else {
           toast({
             title: "No Data",
@@ -89,7 +94,9 @@ const Index = () => {
       setIsLoading(true);
       
       try {
+        console.log("Running backtest with parameters:", params);
         const backtestResult = runBacktest(priceData, params);
+        console.log(`Completed backtest: ${backtestResult.totalRebalances} rebalances performed`);
         setResult(backtestResult);
       } catch (error) {
         console.error("Error running backtest:", error);

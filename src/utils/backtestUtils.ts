@@ -98,16 +98,18 @@ export const runBacktest = (
     // Check if we need to rebalance
     let rebalanced = false;
     if (currentBitcoinRatio > upperBound || currentBitcoinRatio < lowerBound) {
-      // Calculate the target bitcoin value
+      // Calculate the target bitcoin value and USD value
       const targetBitcoinValue = totalValue * targetRatio;
       const targetUsdValue = totalValue - targetBitcoinValue;
       
-      // Update amounts - no need to separately calculate delta
+      // Update amounts
       bitcoinAmount = targetBitcoinValue / price;
       usdAmount = targetUsdValue;
       
       totalRebalances++;
       rebalanced = true;
+      
+      console.log(`Rebalanced on ${date}: Bitcoin ratio was ${(currentBitcoinRatio * 100).toFixed(2)}%, reset to ${targetRatio * 100}%`);
     }
     
     // Track maximum portfolio value for drawdown calculation
@@ -154,7 +156,7 @@ export const runBacktest = (
   // Handle edge case where dates are too close
   const cagr = yearsDiff > 0.01 
     ? ((Math.pow(finalBalance / initialCapital, 1 / yearsDiff)) - 1) * 100
-    : 0;
+    : ((finalBalance / initialCapital - 1) * 100); // Use simple return instead for very short periods
   
   return {
     finalBalance,
