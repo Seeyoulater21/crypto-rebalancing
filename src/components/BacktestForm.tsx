@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -19,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BacktestParams } from "@/utils/backtestUtils";
-import { Bitcoin, Percent, DollarSign, CalendarIcon } from "lucide-react";
+import { Bitcoin, Percent, DollarSign, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BacktestFormProps {
@@ -40,7 +39,13 @@ const BacktestForm = ({
   // Date picker state
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
-
+  const [startDateView, setStartDateView] = useState<Date | undefined>(
+    params.startDate ? new Date(params.startDate) : undefined
+  );
+  const [endDateView, setEndDateView] = useState<Date | undefined>(
+    params.endDate ? new Date(params.endDate) : undefined
+  );
+  
   // Predefined ranges for quick selection
   const dateRanges = [
     { label: "All Time", value: "all" },
@@ -68,20 +73,15 @@ const BacktestForm = ({
     onParamsChange({ ...params, rebalanceThreshold: value[0] });
   };
 
-  const handleStartDateChange = (date: Date | undefined) => {
-    if (date) {
-      const formattedDate = date.toISOString().split('T')[0];
-      onParamsChange({ ...params, startDate: formattedDate });
-      setStartDateOpen(false);
-    }
+  // Date selection helpers
+  const handleStartDateChange = (date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0];
+    onParamsChange({ ...params, startDate: formattedDate });
   };
 
-  const handleEndDateChange = (date: Date | undefined) => {
-    if (date) {
-      const formattedDate = date.toISOString().split('T')[0];
-      onParamsChange({ ...params, endDate: formattedDate });
-      setEndDateOpen(false);
-    }
+  const handleEndDateChange = (date: Date) => {
+    const formattedDate = date.toISOString().split('T')[0];
+    onParamsChange({ ...params, endDate: formattedDate });
   };
 
   // Handle predefined range selection
@@ -125,6 +125,109 @@ const BacktestForm = ({
       startDate: startDate.toISOString().split('T')[0],
       endDate: endDate.toISOString().split('T')[0]
     });
+    
+    // Update date view states
+    setStartDateView(startDate);
+    setEndDateView(endDate);
+  };
+  
+  // Custom calendar navigation
+  const goPrevMonth = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
+    if (dateView) {
+      setDateView(subMonths(dateView, 1));
+    }
+  };
+  
+  const goNextMonth = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
+    if (dateView) {
+      setDateView(addMonths(dateView, 1));
+    }
+  };
+  
+  const goPrevYear = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
+    if (dateView) {
+      setDateView(subYears(dateView, 1));
+    }
+  };
+  
+  const goNextYear = (dateView: Date | undefined, setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>) => {
+    if (dateView) {
+      setDateView(addYears(dateView, 1));
+    }
+  };
+  
+  // Custom month picker renderer
+  const renderMonthPicker = (
+    currentDate: Date | undefined,
+    onChange: (date: Date) => void,
+    setDateView: React.Dispatch<React.SetStateAction<Date | undefined>>
+  ) => {
+    if (!currentDate) return null;
+    
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    
+    return (
+      <div className="p-3">
+        <div className="flex justify-between items-center mb-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => goPrevYear(currentDate, setDateView)}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 -ml-2" />
+          </Button>
+          <div className="font-medium">{currentYear}</div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => goNextYear(currentDate, setDateView)}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 -ml-2" />
+          </Button>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {months.map((month, idx) => {
+            const date = new Date(currentYear, idx, 1);
+            const isSelected = idx === currentMonth;
+            
+            return (
+              <Button
+                key={month}
+                variant={isSelected ? "default" : "outline"}
+                className={cn(
+                  "h-9",
+                  isSelected && "bg-bitcoin hover:bg-bitcoin/90 text-white"
+                )}
+                onClick={() => {
+                  const newDate = new Date(currentDate);
+                  newDate.setMonth(idx);
+                  setDateView(newDate);
+                  onChange(newDate);
+                }}
+              >
+                {month}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  
+  // Date display formatting
+  const formatDateDisplay = (dateString: string | undefined) => {
+    if (!dateString) return "Select date";
+    return format(new Date(dateString), "MMM dd, yyyy");
   };
 
   return (
@@ -233,24 +336,15 @@ const BacktestForm = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {params.startDate ? format(new Date(params.startDate), "MMM dd, yyyy") : <span>Pick a date</span>}
+                    {formatDateDisplay(params.startDate)}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-50" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={params.startDate ? new Date(params.startDate) : undefined}
-                    onSelect={handleStartDateChange}
-                    disabled={(date) => {
-                      return (
-                        date > new Date(params.endDate || latestDate) ||
-                        date < new Date(earliestDate) ||
-                        date > new Date(latestDate)
-                      );
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
+                  {renderMonthPicker(
+                    startDateView, 
+                    handleStartDateChange,
+                    setStartDateView
+                  )}
                 </PopoverContent>
               </Popover>
             </div>
@@ -266,24 +360,15 @@ const BacktestForm = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {params.endDate ? format(new Date(params.endDate), "MMM dd, yyyy") : <span>Pick a date</span>}
+                    {formatDateDisplay(params.endDate)}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-50" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={params.endDate ? new Date(params.endDate) : undefined}
-                    onSelect={handleEndDateChange}
-                    disabled={(date) => {
-                      return (
-                        date < new Date(params.startDate || earliestDate) ||
-                        date > new Date(latestDate) ||
-                        date < new Date(earliestDate)
-                      );
-                    }}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
+                  {renderMonthPicker(
+                    endDateView,
+                    handleEndDateChange,
+                    setEndDateView
+                  )}
                 </PopoverContent>
               </Popover>
             </div>
@@ -292,7 +377,7 @@ const BacktestForm = ({
           <div className="text-xs text-muted-foreground mt-2 text-center">
             {params.startDate && params.endDate ? (
               <span>
-                Backtest period: {format(new Date(params.startDate), "MMM dd, yyyy")} to {format(new Date(params.endDate), "MMM dd, yyyy")}
+                Backtest period: {formatDateDisplay(params.startDate)} to {formatDateDisplay(params.endDate)}
               </span>
             ) : (
               <span>Select date range to run backtest</span>

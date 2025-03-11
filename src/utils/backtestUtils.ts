@@ -34,6 +34,7 @@ export interface PerformanceDataPoint {
     usd: number;
   };
   rebalanced: boolean;
+  action?: 'BUY' | 'SELL' | null;
 }
 
 export interface PriceDataPoint {
@@ -67,6 +68,9 @@ export const runBacktest = (
   const upperBound = targetRatio + threshold;
   const lowerBound = targetRatio - threshold;
   
+  console.log(`Strategy parameters: Target ratio: ${targetRatio * 100}%, Threshold: ${threshold * 100}%`);
+  console.log(`Rebalance when Bitcoin allocation ≥ ${upperBound * 100}% or ≤ ${lowerBound * 100}%`);
+  
   // Initial allocation
   const initialBitcoinAllocation = initialCapital * targetRatio;
   const initialUsdAllocation = initialCapital - initialBitcoinAllocation;
@@ -84,6 +88,8 @@ export const runBacktest = (
   const buyHoldBitcoin = initialBitcoinAllocation / filteredPriceData[0].price;
   const buyHoldUsd = initialUsdAllocation;
   
+  console.log(`Day 1: Initial split - Bitcoin: ${formatCurrency(initialBitcoinAllocation)} (${bitcoinAmount.toFixed(8)} BTC), USD: ${formatCurrency(initialUsdAllocation)}`);
+  
   // For each day in our price data
   for (let i = 0; i < filteredPriceData.length; i++) {
     const { date, price } = filteredPriceData[i];
@@ -97,19 +103,35 @@ export const runBacktest = (
     
     // Check if we need to rebalance
     let rebalanced = false;
+    let action: 'BUY' | 'SELL' | null = null;
+    
     if (currentBitcoinRatio > upperBound || currentBitcoinRatio < lowerBound) {
       // Calculate the target bitcoin value and USD value
       const targetBitcoinValue = totalValue * targetRatio;
       const targetUsdValue = totalValue - targetBitcoinValue;
       
+      // Determine if we're buying or selling bitcoin
+      if (currentBitcoinRatio > upperBound) {
+        action = 'SELL';
+        console.log(`${date}: SELL Bitcoin - Ratio too high: ${(currentBitcoinRatio * 100).toFixed(2)}% > ${upperBound * 100}%`);
+      } else {
+        action = 'BUY';
+        console.log(`${date}: BUY Bitcoin - Ratio too low: ${(currentBitcoinRatio * 100).toFixed(2)}% < ${lowerBound * 100}%`);
+      }
+      
+      // Log before rebalance
+      console.log(`  Before rebalance: BTC ${bitcoinAmount.toFixed(8)} (${formatCurrency(bitcoinValue)}) | USD ${formatCurrency(usdAmount)} | Total ${formatCurrency(totalValue)}`);
+      
       // Update amounts
       bitcoinAmount = targetBitcoinValue / price;
       usdAmount = targetUsdValue;
       
+      // Log after rebalance
+      console.log(`  After rebalance: BTC ${bitcoinAmount.toFixed(8)} (${formatCurrency(targetBitcoinValue)}) | USD ${formatCurrency(usdAmount)} | Total ${formatCurrency(totalValue)}`);
+      console.log(`  Rebalanced to ${targetRatio * 100}% BTC / ${(1 - targetRatio) * 100}% USD`);
+      
       totalRebalances++;
       rebalanced = true;
-      
-      console.log(`Rebalanced on ${date}: Bitcoin ratio was ${(currentBitcoinRatio * 100).toFixed(2)}%, reset to ${targetRatio * 100}%`);
     }
     
     // Track maximum portfolio value for drawdown calculation
@@ -136,7 +158,8 @@ export const runBacktest = (
         bitcoin: (bitcoinAmount * price) / totalValue * 100,
         usd: usdAmount / totalValue * 100
       },
-      rebalanced
+      rebalanced,
+      action
     });
   }
   
@@ -155,7 +178,7 @@ export const runBacktest = (
   
   // Handle edge case where dates are too close
   const cagr = yearsDiff > 0.01 
-    ? ((Math.pow(finalBalance / initialCapital, 1 / yearsDiff)) - 1) * 100
+    ? (Math.pow(finalBalance / initialCapital, 1 / yearsDiff) - 1) * 100
     : ((finalBalance / initialCapital - 1) * 100); // Use simple return instead for very short periods
   
   return {

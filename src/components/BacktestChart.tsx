@@ -53,8 +53,12 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
             <span>USD: {formatCurrency(data.usdBalance)} ({Math.round(data.allocation.usd)}%)</span>
           </div>
           {data.rebalanced && (
-            <div className="mt-2 text-xs px-2 py-1 bg-bitcoin/10 text-bitcoin rounded-full inline-block">
-              Rebalanced
+            <div className={`mt-2 text-xs px-2 py-1 ${
+              data.action === 'BUY' 
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-red-100 text-red-700'
+            } rounded-full inline-block`}>
+              {data.action === 'BUY' ? 'BUY Bitcoin' : 'SELL Bitcoin'}
             </div>
           )}
         </div>
@@ -154,7 +158,7 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
                   x={event.formattedDate}
                   y={event.totalBalance}
                   r={4}
-                  fill="#f7931a"
+                  fill={event.action === 'BUY' ? '#3b82f6' : '#ef4444'}
                   stroke="#fff"
                   strokeWidth={2}
                 />
@@ -163,10 +167,17 @@ const BacktestChart = ({ performanceData, isLoading }: BacktestChartProps) => {
           </ResponsiveContainer>
           
           {rebalanceEvents.length > 0 && (
-            <div className="text-xs text-center mt-2 text-muted-foreground">
+            <div className="flex justify-center gap-4 mt-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center">
-                <span className="inline-block w-3 h-3 bg-bitcoin rounded-full mr-1"></span>
-                {rebalanceEvents.length} Rebalancing Events
+                <span className="inline-block w-3 h-3 bg-blue-500 rounded-full mr-1"></span>
+                Buy Bitcoin
+              </span>
+              <span className="inline-flex items-center">
+                <span className="inline-block w-3 h-3 bg-red-500 rounded-full mr-1"></span>
+                Sell Bitcoin
+              </span>
+              <span className="inline-flex items-center">
+                Total Rebalances: {rebalanceEvents.length}
               </span>
             </div>
           )}
