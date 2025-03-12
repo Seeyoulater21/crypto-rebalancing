@@ -1,11 +1,8 @@
-
 # Welcome to your Lovable project
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/1c7ed19b-5d6e-4edd-8ced-e9466aadfce4
-
-**GitHub Pages URL**: https://seeyoulater21.github.io/crypto-rebalaceing/
 
 ## How can I edit this code?
 
@@ -38,17 +35,6 @@ npm i
 # Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
-
-## GitHub Pages Deployment
-
-This project is configured for automatic deployment to GitHub Pages. When you push to the main branch, the deployment workflow will build and deploy your app to GitHub Pages.
-
-To deploy manually through GitHub:
-
-1. Go to your repository settings
-2. Navigate to "Pages" in the sidebar
-3. Select the gh-pages branch as the source
-4. Your site will be published at https://seeyoulater21.github.io/crypto-rebalaceing/
 
 **Edit a file directly in GitHub**
 
