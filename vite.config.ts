@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/crypto-rebalaceing/', // Set base path for GitHub Pages deployment
+  base: '/crypto-rebalancing/', // Set base path for GitHub Pages deployment
   server: {
     host: "::",
     port: 8080,
