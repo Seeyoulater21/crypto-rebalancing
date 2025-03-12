@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format, addYears, subYears } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -269,8 +268,8 @@ const BacktestForm = ({
             className="py-2"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>1% BTC</span>
-            <span>99% BTC</span>
+            <span>1% BTC / 99% USD</span>
+            <span>99% BTC / 1% USD</span>
           </div>
         </div>
 

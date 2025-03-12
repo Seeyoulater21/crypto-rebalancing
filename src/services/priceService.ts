@@ -4,8 +4,8 @@ import { PriceDataPoint } from "../utils/backtestUtils";
 // This function will fetch historical Bitcoin price data
 export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
   try {
-    // First, try to fetch from the local data.json file
-    const response = await fetch("/data.json");
+    // Fetch from the price_data_with_thb.json file
+    const response = await fetch("/price_data_with_thb.json");
     
     if (!response.ok) {
       throw new Error("Failed to fetch price data from local file");
@@ -20,28 +20,32 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
       const formattedPrices: PriceDataPoint[] = data.prices.map(
         (price: [number, number]) => ({
           date: new Date(price[0]).toISOString().split("T")[0], // YYYY-MM-DD format
-          price: price[1],
+          price: Math.round(price[1]), // Round to integer as requested
         })
       );
       
       console.log("Processed data format:", formattedPrices.slice(0, 2));
       return formattedPrices;
     } 
-    // If data.json is already in our format
+    // If data is already in our format
     else if (Array.isArray(data) && data.length > 0 && 'date' in data[0] && 'price' in data[0]) {
-      return data;
+      // Ensure prices are rounded to integers
+      return data.map((item: any) => ({
+        date: item.date,
+        price: Math.round(item.price)
+      }));
     }
-    // If data.json has a different known format (coinbase, etc)
+    // If data has a different known format (coinbase, etc)
     else if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0]) && data[0].length >= 2) {
       return data.map((item: any[]) => ({
         date: new Date(item[0]).toISOString().split("T")[0],
-        price: parseFloat(item[1])
+        price: Math.round(parseFloat(item[1]))
       }));
     }
     // Unexpected format
     else {
       console.error("Unknown data format:", data);
-      throw new Error("Unexpected data format in data.json");
+      throw new Error("Unexpected data format in price_data_with_thb.json");
     }
   } catch (error) {
     console.error("Error fetching historical prices:", error);
