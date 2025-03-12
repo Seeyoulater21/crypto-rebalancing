@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f0f0f0"/>
+  <g transform="translate(600, 315)">
+    <!-- Bitcoin Logo -->
+    <g transform="translate(-150, 0) scale(2.5)">
+      <circle cx="32" cy="32" r="30" fill="#f7931a"/>
+      <path d="M44.4 31.6c.6-4-2.4-6.2-6.5-7.6l1.3-5.3-3.2-.8-1.3 5.2-2.6-.6 1.3-5.2-3.2-.8-1.3 5.3-2.1-.5-4.3-1-1 3.4s2.4.5 2.3.6c1.3.3 1.5 1.2 1.5 1.9l-1.5 6.1.2.1-.2-.1-2.1 8.4c-.2.4-.6 1-1.5.8.1.1-2.3-.6-2.3-.6l-1.6 3.7 4 1 2.1.5-1.3 5.4 3.2.8 1.3-5.3 2.6.7-1.3 5.3 3.2.8 1.3-5.4c5.4 1 9.4.6 11.1-4.3 1.4-3.9-.1-6.2-2.9-7.7 2-.5 3.6-1.8 4-4.6zm-7.2 9.9c-1 3.9-7.6 1.8-9.7 1.3l1.7-6.9c2.1.6 9 1.5 8 5.6zm1-10.1c-.9 3.6-6.4 1.8-8.2 1.3l1.6-6.3c1.8.5 7.6 1.3 6.6 5z" fill="white"/>
+    </g>
+    
+    <!-- Text -->
+    <g transform="translate(120, -30)">
+      <text font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#333">
+        <tspan x="0" y="0">Humble</tspan>
+        <tspan x="0" y="70" fill="#f7931a">Stacker</tspan>
+      </text>
+      <text font-family="Arial, sans-serif" font-size="24" fill="#666" x="0" y="120">
+        Bitcoin Portfolio Rebalancing Backtester
+      </text>
+    </g>
+  </g>
+</svg> 
