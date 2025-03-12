@@ -1,69 +1,115 @@
-# Welcome to your Lovable project
+# 📈 Bitcoin Portfolio Rebalancer
 
-## Project info
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20Site-blue?style=for-the-badge&logo=github)](https://seeyoulater21.github.io/crypto-rebalaceing/)
+[![GitHub](https://img.shields.io/github/license/seeyoulater21/crypto-rebalaceing?style=for-the-badge)](https://github.com/seeyoulater21/crypto-rebalaceing)
 
-**URL**: https://lovable.dev/projects/1c7ed19b-5d6e-4edd-8ced-e9466aadfce4
+An interactive backtesting tool that helps you analyze how a Bitcoin rebalancing strategy would have performed historically. Test various allocation ratios and rebalancing thresholds to optimize your crypto portfolio strategy.
 
-## How can I edit this code?
+![Bitcoin Rebalancing Dashboard](https://images.unsplash.com/photo-1621761191314-4a28f4590dcf?auto=format&fit=crop&w=800&h=400&q=80)
 
-There are several ways of editing your application.
+## 💹 The 50:50 Rebalancing Strategy
 
-**Use Lovable**
+A simple but powerful portfolio management approach that can potentially outperform buy-and-hold strategies during volatile market conditions.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1c7ed19b-5d6e-4edd-8ced-e9466aadfce4) and start prompting.
+### How It Works
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **Initial Setup**
+   - Split your capital equally: 50% in Bitcoin and 50% in fiat (USD or THB)
 
-**Use your preferred IDE**
+2. **Daily Monitoring**
+   - Check if your Bitcoin allocation has drifted from the target ratio
+   - Target allocation: 50%
+   - Rebalance threshold: 5%
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+3. **Rebalancing Rules**
+   - If Bitcoin grows to ≥55% of your portfolio → **SELL** Bitcoin to return to 50:50
+   - If Bitcoin falls to ≤45% of your portfolio → **BUY** Bitcoin to return to 50:50 
+   - If Bitcoin stays between 45-55% → No action needed
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+4. **Long-Term Benefits**
+   - Automatically sells portions during bull markets (capturing profits)
+   - Automatically buys during bear markets (buying the dip)
+   - Reduces emotional decision-making
+   - Helps manage volatility and risk
 
-Follow these steps:
+## ✨ Features
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Customizable Parameters**
+  - Initial capital amount
+  - Bitcoin allocation ratio
+  - Rebalancing threshold percentage
+  - Date range selection
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **Dual Currency Support**
+  - USD (default)
+  - THB (Thai Baht)
 
-# Step 3: Install the necessary dependencies.
-npm i
+- **Comprehensive Analysis**
+  - Interactive performance chart
+  - Rebalancing events visualization
+  - Comparison with buy-and-hold strategy
+  - Key metrics: CAGR, max drawdown, total rebalances
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+- **Responsive Design**
+  - Works on desktop and mobile devices
+
+## 🚀 Live Demo
+
+Experience the tool yourself: [Bitcoin Portfolio Rebalancer](https://seeyoulater21.github.io/crypto-rebalaceing/)
+
+## 🛠️ Technologies Used
+
+- React
+- TypeScript
+- Vite
+- Recharts
+- ShadcnUI
+- TailwindCSS
+
+## 🧠 Why Rebalancing Works
+
+Rebalancing is a contrarian strategy that potentially allows you to:
+
+1. **Buy Low, Sell High** - Automatically enforces this discipline
+2. **Reduce Risk** - Prevents any single asset from dominating your portfolio
+3. **Remove Emotion** - Takes the guesswork out of "timing the market"
+4. **Maximize Volatility Harvesting** - Takes advantage of Bitcoin's famous price swings
+
+## 📊 Sample Results
+
+Based on historical data, a 50:50 BTC/USD portfolio with a 5% rebalance threshold has shown:
+
+- Reduced maximum drawdown compared to buy-and-hold
+- Competitive returns with lower volatility
+- Higher risk-adjusted returns in many market conditions
+
+## 💻 Development
+
+```bash
+# Clone repository
+git clone https://github.com/seeyoulater21/crypto-rebalaceing.git
+
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
+
+# Build for production
+npm run build
+
+# Deploy to GitHub Pages
+npm run deploy
 ```
 
-**Edit a file directly in GitHub**
+## 🤝 Contributing
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Contributions, issues, and feature requests are welcome!
 
-**Use GitHub Codespaces**
+## 📝 License
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+[MIT](LICENSE)
 
-## What technologies are used for this project?
+## 📬 Contact
 
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/1c7ed19b-5d6e-4edd-8ced-e9466aadfce4) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Project Link: [https://github.com/seeyoulater21/crypto-rebalaceing](https://github.com/seeyoulater21/crypto-rebalaceing)
