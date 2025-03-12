@@ -1,4 +1,3 @@
-
 import { PriceDataPoint } from "../utils/backtestUtils";
 
 // This function will fetch historical Bitcoin price data
@@ -12,41 +11,27 @@ export const fetchHistoricalPrices = async (currency: 'USD' | 'THB' = 'USD'): Pr
     }
     
     const data = await response.json();
-    console.log("Loaded data format:", Object.keys(data).slice(0, 2));
+    console.log("Loading price data:", data ? "Data received" : "No data");
     
     // Check if data is in the format we expect (with dates as keys and USD/THB values)
     if (typeof data === 'object' && !Array.isArray(data)) {
       // Convert the object format to our PriceDataPoint array
-      const formattedPrices: PriceDataPoint[] = Object.entries(data).map(
-        ([dateStr, priceObj]: [string, any]) => ({
+      const formattedPrices: PriceDataPoint[] = Object.entries(data)
+        .filter(([_, priceObj]: [string, any]) => priceObj && priceObj[currency])
+        .map(([dateStr, priceObj]: [string, any]) => ({
           date: dateStr,
           price: Math.round(priceObj[currency]), // Round the price to integer for selected currency
-        })
-      );
+        }));
       
       // Sort by date ascending
       formattedPrices.sort((a, b) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
       
-      console.log("Processed data format:", formattedPrices.slice(0, 2));
+      console.log(`Processed ${formattedPrices.length} price records, first date: ${formattedPrices[0]?.date}, price: ${formattedPrices[0]?.price} ${currency}`);
+      console.log(`Last date: ${formattedPrices[formattedPrices.length-1]?.date}, price: ${formattedPrices[formattedPrices.length-1]?.price} ${currency}`);
+      
       return formattedPrices;
-    } 
-    // Fallback for other formats
-    else if (Array.isArray(data) && data.length > 0) {
-      if ('date' in data[0] && 'price' in data[0]) {
-        // Ensure prices are rounded to integers
-        return data.map((item: any) => ({
-          date: item.date,
-          price: Math.round(item.price)
-        }));
-      }
-      else if (Array.isArray(data[0]) && data[0].length >= 2) {
-        return data.map((item: any[]) => ({
-          date: new Date(item[0]).toISOString().split("T")[0],
-          price: Math.round(parseFloat(item[1]))
-        }));
-      }
     }
     
     // Unexpected format
