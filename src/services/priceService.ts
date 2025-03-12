@@ -3,10 +3,14 @@ import { PriceDataPoint } from "../utils/backtestUtils";
 // This function will fetch historical Bitcoin price data
 export const fetchHistoricalPrices = async (currency: 'USD' | 'THB' = 'USD'): Promise<PriceDataPoint[]> => {
   try {
-    // Fetch from the price_data_with_thb.json file
-    const response = await fetch("/price_data_with_thb.json");
+    // Use import.meta.env.BASE_URL to get the correct base path for GitHub Pages
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    
+    // Adjust path to work with the base URL from Vite config
+    const response = await fetch(`${baseUrl}price_data_with_thb.json`);
     
     if (!response.ok) {
+      console.error(`Failed to fetch price data: ${response.status} ${response.statusText}`);
       throw new Error("Failed to fetch price data from local file");
     }
     
@@ -17,16 +21,21 @@ export const fetchHistoricalPrices = async (currency: 'USD' | 'THB' = 'USD'): Pr
     if (typeof data === 'object' && !Array.isArray(data)) {
       // Convert the object format to our PriceDataPoint array
       const formattedPrices: PriceDataPoint[] = Object.entries(data)
-        .filter(([_, priceObj]: [string, any]) => priceObj && priceObj[currency])
+        .filter(([_, priceObj]: [string, any]) => priceObj && typeof priceObj === 'object' && priceObj[currency] !== undefined)
         .map(([dateStr, priceObj]: [string, any]) => ({
           date: dateStr,
-          price: Math.round(priceObj[currency]), // Round the price to integer for selected currency
+          price: Math.round(Number(priceObj[currency])), // Ensure price is a number before rounding
         }));
       
       // Sort by date ascending
       formattedPrices.sort((a, b) => 
         new Date(a.date).getTime() - new Date(b.date).getTime()
       );
+      
+      if (formattedPrices.length === 0) {
+        console.error("No price data was extracted from the JSON file");
+        throw new Error("No valid price data found");
+      }
       
       console.log(`Processed ${formattedPrices.length} price records, first date: ${formattedPrices[0]?.date}, price: ${formattedPrices[0]?.price} ${currency}`);
       console.log(`Last date: ${formattedPrices[formattedPrices.length-1]?.date}, price: ${formattedPrices[formattedPrices.length-1]?.price} ${currency}`);
@@ -35,7 +44,7 @@ export const fetchHistoricalPrices = async (currency: 'USD' | 'THB' = 'USD'): Pr
     }
     
     // Unexpected format
-    console.error("Unknown data format:", data);
+    console.error("Unknown data format:", typeof data, Array.isArray(data) ? "array" : "not array", Object.keys(data).slice(0, 3));
     throw new Error("Unexpected data format in price_data_with_thb.json");
   } catch (error) {
     console.error("Error fetching historical prices:", error);
