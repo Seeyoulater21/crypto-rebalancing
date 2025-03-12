@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import BacktestForm from "@/components/BacktestForm";
 import BacktestResults from "@/components/BacktestResults";
@@ -130,7 +129,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <Bitcoin className="h-8 w-8 text-bitcoin animate-pulse-subtle" />
               <h1 className="text-2xl font-bold tracking-tight">
-                Crypto <span className="text-bitcoin">Rebalance</span> Backtester
+                Stay <span className="text-bitcoin">Humble</span>
               </h1>
             </div>
           </div>
@@ -139,7 +138,7 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 text-center max-w-2xl mx-auto animate-fade-in">
-          <h2 className="text-3xl font-semibold mb-3">Bitcoin-{params.currency} Portfolio Backtesting</h2>
+          <h2 className="text-3xl font-semibold mb-3">Stay Humble - Bitcoin Portfolio Backtester</h2>
           <p className="text-muted-foreground">
             Test how different rebalancing strategies would have performed historically.
             Adjust parameters to find your optimal portfolio strategy.
@@ -171,7 +170,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center text-sm text-muted-foreground">
             <p className="mt-2">
-              © {new Date().getFullYear()} Crypto Rebalance Backtester
+              © {new Date().getFullYear()} Stay Humble
             </p>
           </div>
         </div>
