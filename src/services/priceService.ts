@@ -12,41 +12,46 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
     }
     
     const data = await response.json();
-    console.log("Loaded data format:", data.slice(0, 2));
+    console.log("Loaded data format:", Object.keys(data).slice(0, 2));
     
-    // Check data format and process accordingly
-    if (Array.isArray(data.prices)) {
-      // Format the data into our PriceDataPoint structure
-      const formattedPrices: PriceDataPoint[] = data.prices.map(
-        (price: [number, number]) => ({
-          date: new Date(price[0]).toISOString().split("T")[0], // YYYY-MM-DD format
-          price: Math.round(price[1]), // Round to integer as requested
+    // Check if data is in the format we expect (with dates as keys and USD/THB values)
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      // Convert the object format to our PriceDataPoint array
+      const formattedPrices: PriceDataPoint[] = Object.entries(data).map(
+        ([dateStr, priceObj]: [string, any]) => ({
+          date: dateStr,
+          price: Math.round(priceObj.USD), // Round the USD price to integer
         })
+      );
+      
+      // Sort by date ascending
+      formattedPrices.sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
       );
       
       console.log("Processed data format:", formattedPrices.slice(0, 2));
       return formattedPrices;
     } 
-    // If data is already in our format
-    else if (Array.isArray(data) && data.length > 0 && 'date' in data[0] && 'price' in data[0]) {
-      // Ensure prices are rounded to integers
-      return data.map((item: any) => ({
-        date: item.date,
-        price: Math.round(item.price)
-      }));
+    // Fallback for other formats
+    else if (Array.isArray(data) && data.length > 0) {
+      if ('date' in data[0] && 'price' in data[0]) {
+        // Ensure prices are rounded to integers
+        return data.map((item: any) => ({
+          date: item.date,
+          price: Math.round(item.price)
+        }));
+      }
+      else if (Array.isArray(data[0]) && data[0].length >= 2) {
+        return data.map((item: any[]) => ({
+          date: new Date(item[0]).toISOString().split("T")[0],
+          price: Math.round(parseFloat(item[1]))
+        }));
+      }
     }
-    // If data has a different known format (coinbase, etc)
-    else if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0]) && data[0].length >= 2) {
-      return data.map((item: any[]) => ({
-        date: new Date(item[0]).toISOString().split("T")[0],
-        price: Math.round(parseFloat(item[1]))
-      }));
-    }
+    
     // Unexpected format
-    else {
-      console.error("Unknown data format:", data);
-      throw new Error("Unexpected data format in price_data_with_thb.json");
-    }
+    console.error("Unknown data format:", data);
+    throw new Error("Unexpected data format in price_data_with_thb.json");
   } catch (error) {
     console.error("Error fetching historical prices:", error);
     // Fallback to mock data

@@ -267,10 +267,6 @@ const BacktestForm = ({
             onValueChange={handleRatioChange}
             className="py-2"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>1% BTC / 99% USD</span>
-            <span>99% BTC / 1% USD</span>
-          </div>
         </div>
 
         <div className="space-y-3">
@@ -289,10 +285,6 @@ const BacktestForm = ({
             onValueChange={handleThresholdChange}
             className="py-2"
           />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Frequent (1%)</span>
-            <span>Infrequent (25%)</span>
-          </div>
         </div>
 
         <div className="space-y-3">
