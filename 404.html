@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found - Humble Stacker</title>
+  <script>
+    // Redirect to the main app which will handle routing
+    const basePath = '/crypto-rebalancing';
+    const redirectPath = `${basePath}${window.location.pathname.replace(basePath, '')}`;
+    
+    // Preserve search parameters and hash
+    const queryParams = window.location.search;
+    const hashFragment = window.location.hash;
+    
+    // Create the full redirect URL
+    const redirectUrl = `${window.location.origin}${basePath}/${queryParams}${hashFragment}`;
+    
+    // Redirect
+    window.location.replace(redirectUrl);
+  </script>
+</head>
+<body>
+  <h1>Redirecting...</h1>
+  <p>If you are not redirected automatically, please <a href="/crypto-rebalancing/">click here to go to Humble Stacker</a>.</p>
+</body>
+</html> 

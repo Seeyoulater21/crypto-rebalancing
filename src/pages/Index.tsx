@@ -25,6 +25,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [earliestDate, setEarliestDate] = useState<string>("");
   const [latestDate, setLatestDate] = useState<string>("");
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
 
   // Fetch historical price data on mount
   useEffect(() => {
@@ -52,6 +53,7 @@ const Index = () => {
           }));
           
           setPriceData(data);
+          setDataLoaded(true);
           
           toast({
             title: "Data Loaded",
@@ -79,44 +81,67 @@ const Index = () => {
     loadData();
   }, [params.currency, toast]);
 
-  // Run backtest automatically when parameters change
+  // Run backtest immediately after data is loaded
+  useEffect(() => {
+    if (!dataLoaded) return;
+    
+    // Run backtest immediately once data is loaded
+    runImmediateBacktest();
+  }, [dataLoaded]);
+
+  // Function to run backtest
+  const runImmediateBacktest = () => {
+    if (
+      priceData.length === 0 ||
+      !params.startDate || 
+      !params.endDate
+    ) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      console.log("Running backtest with parameters:", params);
+      const backtestResult = runBacktest(priceData, params);
+      console.log(`Completed backtest: ${backtestResult.totalRebalances} rebalances performed`);
+      setResult(backtestResult);
+    } catch (error) {
+      console.error("Error running backtest:", error);
+      toast({
+        title: "Backtest Error",
+        description: error instanceof Error ? error.message : "An unknown error occurred during backtest.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Run backtest when parameters change (with debounce)
   useEffect(() => {
     if (
       priceData.length === 0 ||
       !params.startDate || 
       !params.endDate || 
-      isLoading
+      isLoading ||
+      !dataLoaded
     ) {
       return;
     }
     
     const runBacktestDebounced = setTimeout(() => {
-      setIsLoading(true);
-      
-      try {
-        console.log("Running backtest with parameters:", params);
-        const backtestResult = runBacktest(priceData, params);
-        console.log(`Completed backtest: ${backtestResult.totalRebalances} rebalances performed`);
-        setResult(backtestResult);
-      } catch (error) {
-        console.error("Error running backtest:", error);
-        toast({
-          title: "Backtest Error",
-          description: error instanceof Error ? error.message : "An unknown error occurred during backtest.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      runImmediateBacktest();
     }, 300); // Debounce for 300ms to prevent too many calculations
 
     return () => clearTimeout(runBacktestDebounced);
-  }, [params, priceData, toast]);
+  }, [params, priceData]);
 
   const handleParamsChange = (newParams: BacktestParams) => {
     if (newParams.currency !== params.currency) {
       // If currency changes, we need to reload the price data
       setPriceData([]);
+      setDataLoaded(false);
     }
     setParams(newParams);
   };
@@ -129,7 +154,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <Bitcoin className="h-8 w-8 text-bitcoin animate-pulse-subtle" />
               <h1 className="text-2xl font-bold tracking-tight">
-                Stay <span className="text-bitcoin">Humble</span>
+                Humble <span className="text-bitcoin">Stacker</span>
               </h1>
             </div>
           </div>
@@ -138,7 +163,7 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 text-center max-w-2xl mx-auto animate-fade-in">
-          <h2 className="text-3xl font-semibold mb-3">Stay Humble - Bitcoin Portfolio Backtester</h2>
+          <h2 className="text-3xl font-semibold mb-3">Humble Stacker - Bitcoin Portfolio Backtester</h2>
           <p className="text-muted-foreground">
             Test how different rebalancing strategies would have performed historically.
             Adjust parameters to find your optimal portfolio strategy.
@@ -170,7 +195,7 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center text-sm text-muted-foreground">
             <p className="mt-2">
-              © {new Date().getFullYear()} Stay Humble
+              © {new Date().getFullYear()} Humble Stacker
             </p>
           </div>
         </div>

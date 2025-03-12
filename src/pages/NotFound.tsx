@@ -1,4 +1,3 @@
-
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,7 @@ const NotFound = () => {
           asChild 
           className="bg-bitcoin hover:bg-bitcoin-dark text-white px-8 py-6 h-auto hover-scale"
         >
-          <a href="/">Return to Backtester</a>
+          <a href="/crypto-rebalancing/">Return to Humble Stacker</a>
         </Button>
       </div>
     </div>

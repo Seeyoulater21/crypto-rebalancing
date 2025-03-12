@@ -8,12 +8,16 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Determine if we're in production based on the URL
+const isProduction = window.location.href.includes('github.io');
+const basePath = isProduction ? '/crypto-rebalancing' : '';
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={basePath}>
         <Routes>
           <Route path="/" element={<Index />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
