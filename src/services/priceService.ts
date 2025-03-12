@@ -6,8 +6,14 @@ export const fetchHistoricalPrices = async (currency: 'USD' | 'THB' = 'USD'): Pr
     // Use import.meta.env.BASE_URL to get the correct base path for GitHub Pages
     const baseUrl = import.meta.env.BASE_URL || '/';
     
+    // Ensure baseUrl ends with a slash
+    const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    
     // Adjust path to work with the base URL from Vite config
-    const response = await fetch(`${baseUrl}price_data_with_thb.json`);
+    const dataUrl = `${normalizedBaseUrl}price_data_with_thb.json`;
+    console.log("Fetching price data from:", dataUrl);
+    
+    const response = await fetch(dataUrl);
     
     if (!response.ok) {
       console.error(`Failed to fetch price data: ${response.status} ${response.statusText}`);
