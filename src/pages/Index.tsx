@@ -18,6 +18,7 @@ const Index = () => {
     rebalanceThreshold: 5,
     startDate: "",
     endDate: "",
+    currency: "USD",
   });
   
   const [priceData, setPriceData] = useState<any[]>([]);
@@ -31,7 +32,7 @@ const Index = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchHistoricalPrices();
+        const data = await fetchHistoricalPrices(params.currency);
         
         if (data.length > 0) {
           // Sort data by date
@@ -77,7 +78,7 @@ const Index = () => {
     };
 
     loadData();
-  }, [toast]);
+  }, [params.currency, toast]);
 
   // Run backtest automatically when parameters change
   useEffect(() => {
@@ -114,6 +115,10 @@ const Index = () => {
   }, [params, priceData, toast]);
 
   const handleParamsChange = (newParams: BacktestParams) => {
+    if (newParams.currency !== params.currency) {
+      // If currency changes, we need to reload the price data
+      setPriceData([]);
+    }
     setParams(newParams);
   };
 
@@ -134,7 +139,7 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8 md:py-12">
         <div className="mb-8 text-center max-w-2xl mx-auto animate-fade-in">
-          <h2 className="text-3xl font-semibold mb-3">Bitcoin-USD Portfolio Backtesting</h2>
+          <h2 className="text-3xl font-semibold mb-3">Bitcoin-{params.currency} Portfolio Backtesting</h2>
           <p className="text-muted-foreground">
             Test how different rebalancing strategies would have performed historically.
             Adjust parameters to find your optimal portfolio strategy.
@@ -165,9 +170,6 @@ const Index = () => {
       <footer className="border-t border-gray-100 py-6 mt-12">
         <div className="container mx-auto px-4">
           <div className="text-center text-sm text-muted-foreground">
-            <p>
-              Historical Bitcoin data provided by CoinGecko API. Past performance is not indicative of future results.
-            </p>
             <p className="mt-2">
               © {new Date().getFullYear()} Crypto Rebalance Backtester
             </p>

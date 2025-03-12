@@ -2,7 +2,7 @@
 import { PriceDataPoint } from "../utils/backtestUtils";
 
 // This function will fetch historical Bitcoin price data
-export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
+export const fetchHistoricalPrices = async (currency: 'USD' | 'THB' = 'USD'): Promise<PriceDataPoint[]> => {
   try {
     // Fetch from the price_data_with_thb.json file
     const response = await fetch("/price_data_with_thb.json");
@@ -20,7 +20,7 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
       const formattedPrices: PriceDataPoint[] = Object.entries(data).map(
         ([dateStr, priceObj]: [string, any]) => ({
           date: dateStr,
-          price: Math.round(priceObj.USD), // Round the USD price to integer
+          price: Math.round(priceObj[currency]), // Round the price to integer for selected currency
         })
       );
       
@@ -55,19 +55,21 @@ export const fetchHistoricalPrices = async (): Promise<PriceDataPoint[]> => {
   } catch (error) {
     console.error("Error fetching historical prices:", error);
     // Fallback to mock data
-    return mockPriceData();
+    return mockPriceData(currency);
   }
 };
 
 // Fallback mock data in case the API fails
-const mockPriceData = (): PriceDataPoint[] => {
+const mockPriceData = (currency: 'USD' | 'THB' = 'USD'): PriceDataPoint[] => {
   // Generate some basic price data for demonstration purposes
   const startDate = new Date("2015-01-01"); // Starting from 2015
   const endDate = new Date();
   const prices: PriceDataPoint[] = [];
   
   // Bitcoin started around $300 in 2015 and had various cycles
-  let price = 300;
+  // THB conversion roughly 33 THB per 1 USD
+  const conversionRate = currency === 'THB' ? 33 : 1;
+  let price = 300 * conversionRate;
   let currentDate = new Date(startDate);
   
   while (currentDate <= endDate) {
@@ -89,12 +91,12 @@ const mockPriceData = (): PriceDataPoint[] => {
     price = price * (1 + cycleFactor + growthFactor + noiseFactor);
     
     // Ensure we don't go below a certain threshold
-    price = Math.max(price, 200);
+    price = Math.max(price, 200 * conversionRate);
     
     // Add this day's price to our dataset
     prices.push({
       date: currentDate.toISOString().split("T")[0],
-      price: price
+      price: Math.round(price)
     });
     
     // Move to the next day

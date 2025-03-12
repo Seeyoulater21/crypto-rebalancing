@@ -16,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { BacktestParams } from "@/utils/backtestUtils";
 import { Bitcoin, Percent, DollarSign, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -70,6 +72,27 @@ const BacktestForm = ({
 
   const handleThresholdChange = (value: number[]) => {
     onParamsChange({ ...params, rebalanceThreshold: value[0] });
+  };
+
+  const handleCurrencyToggle = () => {
+    const newCurrency = params.currency === 'USD' ? 'THB' : 'USD';
+    // Convert the initial capital based on the currency
+    // THB is roughly 33x USD
+    const conversionRate = newCurrency === 'THB' ? 33 : 1/33;
+    const defaultInitialCapital = newCurrency === 'THB' ? 100000 : 3000;
+    
+    // Only convert if the current value is the default for the previous currency
+    const isDefaultValue = 
+      (params.currency === 'USD' && Math.abs(params.initialCapital - 10000) < 1) || 
+      (params.currency === 'THB' && Math.abs(params.initialCapital - 100000) < 1);
+    
+    const newCapital = isDefaultValue ? defaultInitialCapital : Math.round(params.initialCapital * conversionRate);
+    
+    onParamsChange({ 
+      ...params, 
+      currency: newCurrency,
+      initialCapital: newCapital
+    });
   };
 
   // Handle month and year selection
@@ -229,13 +252,31 @@ const BacktestForm = ({
         </div>
       </div>
       <CardContent className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium">Currency</div>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="currency-toggle" className={!params.currency || params.currency === 'USD' ? 'font-bold' : ''}>USD</Label>
+            <Switch 
+              id="currency-toggle"
+              checked={params.currency === 'THB'}
+              onCheckedChange={handleCurrencyToggle}
+            />
+            <Label htmlFor="currency-toggle" className={params.currency === 'THB' ? 'font-bold' : ''}>THB</Label>
+          </div>
+        </div>
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label htmlFor="capital" className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              {params.currency === 'THB' ? 
+                <span className="font-bold">฿</span> : 
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              }
               Initial Capital
             </label>
-            <span className="text-sm text-muted-foreground">${params.initialCapital.toLocaleString()}</span>
+            <span className="text-sm text-muted-foreground">
+              {params.currency === 'THB' ? '฿' : '$'}{params.initialCapital.toLocaleString()}
+            </span>
           </div>
           <div className="flex items-center space-x-2">
             <Input
@@ -256,7 +297,7 @@ const BacktestForm = ({
               Bitcoin Allocation Ratio
             </label>
             <span className="text-sm text-muted-foreground">
-              {params.bitcoinRatio}% BTC / {100 - params.bitcoinRatio}% USD
+              {params.bitcoinRatio}% BTC / {100 - params.bitcoinRatio}% {params.currency}
             </span>
           </div>
           <Slider

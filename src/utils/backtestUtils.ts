@@ -1,4 +1,3 @@
-
 import { format } from "date-fns";
 
 export interface BacktestParams {
@@ -7,6 +6,7 @@ export interface BacktestParams {
   rebalanceThreshold: number;
   startDate: string;
   endDate: string;
+  currency: 'USD' | 'THB';
 }
 
 export interface BacktestResult {
@@ -19,6 +19,7 @@ export interface BacktestResult {
   performanceData: PerformanceDataPoint[];
   buyHoldBalance: number;
   buyHoldBitcoin: number;
+  currency: 'USD' | 'THB';
 }
 
 export interface PerformanceDataPoint {
@@ -46,7 +47,7 @@ export const runBacktest = (
   priceData: PriceDataPoint[], 
   params: BacktestParams
 ): BacktestResult => {
-  const { initialCapital, bitcoinRatio, rebalanceThreshold, startDate, endDate } = params;
+  const { initialCapital, bitcoinRatio, rebalanceThreshold, startDate, endDate, currency } = params;
   
   // Filter data by date range
   const filteredPriceData = priceData.filter(
@@ -93,7 +94,7 @@ export const runBacktest = (
   const buyHoldBitcoin = initialBitcoinAllocation / filteredPriceData[0].price;
   const buyHoldUsd = initialUsdAllocation;
   
-  console.log(`Day 1: Initial split - Bitcoin: ${formatCurrency(initialBitcoinAllocation)} (${bitcoinAmount.toFixed(8)} BTC), USD: ${formatCurrency(initialUsdAllocation)}`);
+  console.log(`Day 1: Initial split - ${currency}: ${formatCurrency(initialBitcoinAllocation, currency)} (${bitcoinAmount.toFixed(8)} BTC), ${currency}: ${formatCurrency(initialUsdAllocation, currency)}`);
   
   // For each day in our price data
   for (let i = 0; i < filteredPriceData.length; i++) {
@@ -195,14 +196,15 @@ export const runBacktest = (
     maxDrawdown: Math.abs(minDrawdown) * 100,
     performanceData,
     buyHoldBalance,
-    buyHoldBitcoin
+    buyHoldBitcoin,
+    currency
   };
 };
 
-export const formatCurrency = (value: number): string => {
+export const formatCurrency = (value: number, currency: 'USD' | 'THB' = 'USD'): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);

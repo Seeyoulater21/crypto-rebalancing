@@ -28,6 +28,8 @@ const BacktestResults = ({ result, isLoading }: BacktestResultsProps) => {
 
   const rebalancePerformance = (result.finalBalance - result.buyHoldBalance) / result.buyHoldBalance * 100;
   const isRebalancingBetter = rebalancePerformance > 0;
+  const currency = result.currency || 'USD';
+  const currencySymbol = currency === 'THB' ? '฿' : '$';
 
   return (
     <Card className="rounded-xl smooth-shadow">
@@ -46,7 +48,7 @@ const BacktestResults = ({ result, isLoading }: BacktestResultsProps) => {
                 <span className="text-sm">Final Portfolio Value</span>
               </div>
               <div className="text-xl font-semibold">
-                {formatCurrency(result.finalBalance)}
+                {formatCurrency(result.finalBalance, currency)}
               </div>
             </div>
             
@@ -63,10 +65,10 @@ const BacktestResults = ({ result, isLoading }: BacktestResultsProps) => {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Final USD Amount</span>
+                <span className="text-sm">Final {currency} Amount</span>
               </div>
               <div className="font-medium">
-                {formatCurrency(result.finalUsdAmount)}
+                {formatCurrency(result.finalUsdAmount, currency)}
               </div>
             </div>
             
@@ -108,7 +110,7 @@ const BacktestResults = ({ result, isLoading }: BacktestResultsProps) => {
                 <span className="text-sm">Buy & Hold Result</span>
               </div>
               <div className="font-medium">
-                {formatCurrency(result.buyHoldBalance)}
+                {formatCurrency(result.buyHoldBalance, currency)}
               </div>
             </div>
             
