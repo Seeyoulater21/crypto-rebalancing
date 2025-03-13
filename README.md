@@ -1,6 +1,6 @@
 # 📈 Bitcoin Portfolio Rebalancer
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live%20Site-blue?style=for-the-badge&logo=github)]([https://seeyoulater21.github.io/crypto-rebalaceing/](https://seeyoulater21.github.io/crypto-rebalancing/))
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20Site-blue?style=for-the-badge&logo=github)](https://seeyoulater21.github.io/crypto-rebalancing/)
 [![GitHub](https://img.shields.io/github/license/seeyoulater21/crypto-rebalaceing?style=for-the-badge)](https://github.com/seeyoulater21/crypto-rebalaceing)
 
 An interactive backtesting tool that helps you analyze how a Bitcoin rebalancing strategy would have performed historically. Test various allocation ratios and rebalancing thresholds to optimize your crypto portfolio strategy.
